@@ -23,44 +23,31 @@ require([
   'ramda',
   'pointfree',
   'bacon',
-  'future',
   'io',
-  'maybe',
-  'id',
-  'monoids',
-  'either',
   'domReady!'
 ],
-function (_, pf, b, Future, io, Maybe, Id, Monoids, Either) {
+function (_, pf, b, io) {
   io.extendFn();
   var runIO = io.runIO,
-  IO        = io.IO,
-  Left      = Either.Left,
-  Right     = Either.Right,
-  compose   = _.compose,
-  map       = _.map,
-  log       = _.curry(function(x) { console.log(x); return x; }),
-  onValue   = _.curry(function(f, obj){ return obj.onValue(f); }),
-  listen    = _.curry(function(name, el) { return b.fromEventTarget(el, name); }),
-  lt        = _.curry(function(a, b){ return a < b; });
-
-  var getElement = function (sel) {
-    return document.querySelector(sel);
-  }.toIO();
-
-  var input = getElement('input'),
-    button = getElement('button').runIO();
+    IO      = io.IO,
+    compose = _.compose,
+    map     = _.map,
+    listen  = _.curry(function(name, el) { return b.fromEventTarget(el, name); }),
+    lt      = _.curry(function(a, b){ return a < b; }),
+    $       = function (sel) { return document.querySelector(sel); }.toIO();
 
   var isPresent    = compose(lt(0), _.get('length')),
     targetValue    = compose(_.get('value'), _.get('target')),
     hasValue       = compose(isPresent, targetValue),
-    validityStream = compose(map(hasValue), listen('keyup')),
-    toggle = _.curry(function(el, bool){
-      el.disabled = !bool;
-      return el;
-    });
+    toggle         = _.curry(function(el, bool){ return IO(function(){el.disabled = !bool; }); });
 
-  var prog = compose(map(map(toggle(button))), map(validityStream), getElement);
+  var validityStream = compose(map(hasValue), listen('keyup')),
+    enableIfValue    = _.curry(function(input, btn) {
+      return validityStream(input).map(toggle(btn));
+    }),
+    prog             = pf.liftA2(enableIfValue, $('input'), $('button'));
 
-  prog('input').runIO().onValue();
+  //////////////////////////////////////////////////////////////////////////////
+
+  prog.runIO().onValue(runIO);
 });
