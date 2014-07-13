@@ -49,11 +49,11 @@ function (_, L, pf, b, io, Monoids) {
 
     var hasEmail = compose(All, hasValue, $, K('#email')),
         hasPassword = compose(All, hasValue, $, K('#password')),
-        validate = compose(showValidations, getResult, mconcat([hasEmail, hasPassword])),
+        validate = compose(getResult, mconcat([hasEmail, hasPassword])),
         submitIfValid = compose(map(validate), preventDefault, listen('submit')),
         prog = submitIfValid;
 
   //////////////////////////////////////////////////////////////////////////////
 
-  prog($('form')).onValue(runIO);
+  prog($('form')).onValue(log);
 });
