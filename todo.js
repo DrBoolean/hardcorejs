@@ -11,7 +11,6 @@ requirejs.config({
     pointfree: 'https://raw.githack.com/DrBoolean/pointfree-fantasy/master/dist/pointfree.amd',
     bacon: 'https://cdnjs.cloudflare.com/ajax/libs/bacon.js/0.7.14/Bacon',
     future: 'http://looprecur.com/hostedjs/v2/data.future.umd',
-    io: 'http://looprecur.com/hostedjs/v2/io',
     maybe: 'http://looprecur.com/hostedjs/v2/maybe',
     id: 'http://looprecur.com/hostedjs/v2/id',
     monoids: 'http://looprecur.com/hostedjs/v2/monoids',
@@ -29,49 +28,43 @@ require([
   'pointfree',
   'future',
   'bacon',
-  'io',
   'monoids',
   'domReady!'
 ],
-function (_, H, L, pf, Future, b, io, Monoids) {
-  io.extendFn();
+function (_, H, L, pf, Future, b, Monoids) {
   L.expose(window);
   pf.expose(window);
   var Handlebars = H.default;
-  var runIO = io.runIO,
-    IO      = io.IO,
-    compose = _.compose,
-    map     = _.map,
-    targetValue    = compose(_.get('value'), _.get('target')),
-    listen  = _.curry(function(name, el) { return b.fromEventTarget(el, name); }),
-    $       = function (sel) { return document.querySelector(sel); }.toIO(),
-    getJSON  = function (url) {
-      return new Future(function(rej, res){
-        return jQuery.getJSON(url,res);
-      });
-    },
-    setHtml = _.curry(function(sel, h){ $(sel).runIO().innerHTML = h; }).toIO(),
-    getFromStorage = function(name){ return JSON.parse(localStorage[name]); }.toIO(),
-    saveToStorage = _.curry(function(name, val){ localStorage[name] = JSON.stringify(val); return val; }).toIO(),
-    log         = function(x){ console.log(x); return x };
+  compose     = _.compose,
+  map         = _.map,
+  targetValue = compose(_.get('value'), _.get('target')),
+  listen      = _.curry(function(name, el) { return b.fromEventTarget(el, name); }),
+  $           = function (sel) { return document.querySelector(sel); },
+  getJSON     = function (url) {
+    return new Future(function(rej, res){
+      return jQuery.getJSON(url,res);
+    });
+  },
+  setHtml        = _.curry(function(sel, h){ $(sel).innerHTML = h; }),
+  getFromStorage = function(name){ return JSON.parse(localStorage[name]); },
+  saveToStorage  = _.curry(function(name, val){ localStorage[name] = JSON.stringify(val); return val; }),
+  log            = function(x){ console.log(x); return x };
 
+  var todosView = Handlebars.compile($("#todo-tpl").innerHTML);
 
-    var todosView = Handlebars.compile($("#todo-tpl").runIO().innerHTML);
+  var appendTodo = function(t){
+    return unshift(t, getFromStorage('todos'));
+  }
 
-    var appendTodo = function(t){
-      return map(unshift(t), getFromStorage('todos'));
-    }
-
-    var isEnterKey = compose(eq(13), _.get('keyCode')),
-        updatePage = compose(setHtml('#main'), todosView),
-        renderTodos = compose(chain(updatePage), getFromStorage),
-        persistTodo = compose(chain(saveToStorage('todos')), appendTodo),
-        appendToList = compose(chain(updatePage), persistTodo,  targetValue),
-        saveTodo = compose(map(appendToList), filter(isEnterKey), listen('keyup')),
-        addListener = compose(map(saveTodo), $);
+  var isEnterKey = compose(eq(13)                 , _.get('keyCode')),
+    updatePage   = compose(setHtml('#main')       , todosView),
+    renderTodos  = compose(updatePage             , getFromStorage),
+    persistTodo  = compose(saveToStorage('todos') , appendTodo),
+    saveTodo     = compose(updatePage             , persistTodo      , targetValue),
+    onEnter      = compose(filter(isEnterKey)     , listen('keyup'));
 
   //////////////////////////////////////////////////////////////////////////////
 
-  addListener('input').runIO().onValue(runIO);
-  renderTodos('todos').runIO();
+  onEnter($('input')).onValue(saveTodo);
+  renderTodos('todos');
 });
