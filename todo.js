@@ -32,9 +32,10 @@ require([
   'domReady!'
 ],
 function (_, H, L, pf, Future, b, Monoids) {
+  // {{{ setup
   L.expose(window);
   pf.expose(window);
-  var Handlebars = H.default;
+  var Handlebars = H.default,
   compose     = _.compose,
   map         = _.map,
   targetValue = compose(_.get('value'), _.get('target')),
@@ -48,23 +49,23 @@ function (_, H, L, pf, Future, b, Monoids) {
   setHtml        = _.curry(function(sel, h){ $(sel).innerHTML = h; }),
   getFromStorage = function(name){ return JSON.parse(localStorage[name]); },
   saveToStorage  = _.curry(function(name, val){ localStorage[name] = JSON.stringify(val); return val; }),
-  log            = function(x){ console.log(x); return x };
-
-  var todosView = Handlebars.compile($("#todo-tpl").innerHTML);
-
-  var appendTodo = function(t){
-    return unshift(t, getFromStorage('todos'));
-  }
-
-  var isEnterKey = compose(eq(13)                 , _.get('keyCode')),
-    updatePage   = compose(setHtml('#main')       , todosView),
-    renderTodos  = compose(updatePage             , getFromStorage),
-    persistTodo  = compose(saveToStorage('todos') , appendTodo),
-    saveTodo     = compose(updatePage             , persistTodo      , targetValue),
-    onEnter      = compose(filter(isEnterKey)     , listen('keyup'));
+  log            = function(x){ console.log(x); return x; };
+  // }}}
 
   //////////////////////////////////////////////////////////////////////////////
 
-  onEnter($('input')).onValue(saveTodo);
+  var isEnterKey = compose(eq(13)                 , _.get('keyCode')),
+    textOnEnter  = compose(map(targetValue)       , filter(isEnterKey)     , listen('keyup')),
+    renderTodos  = Handlebars.compile($('#todo-tpl').innerHTML),
+    updatePage   = compose(setHtml('#main')       , renderTodos),
+
+    appendTodo   = function(t){ return unshift(t, getFromStorage('todos')); },
+    renderTodos  = compose(updatePage             , getFromStorage),
+    persistTodo  = compose(saveToStorage('todos') , appendTodo),
+    saveTodo     = compose(updatePage             , persistTodo);
+
+  //////////////////////////////////////////////////////////////////////////////
+
+  textOnEnter($('input')).onValue(saveTodo);
   renderTodos('todos');
 });
