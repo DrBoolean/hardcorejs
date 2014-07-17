@@ -36,8 +36,6 @@ function (_, H, L, pf, Future, b, Monoids) {
   L.expose(window);
   pf.expose(window);
   var Handlebars = H.default,
-  compose     = _.compose,
-  map         = _.map,
   targetValue = compose(_.get('value'), _.get('target')),
   listen      = _.curry(function(name, el) { return b.fromEventTarget(el, name); }),
   $           = function (sel) { return document.querySelector(sel); },

@@ -29,26 +29,21 @@ require([
   'domReady!'
 ],
 function (_, L, pf, b, io) {
-  io.extendFn();
-  var runIO = io.runIO,
-    IO      = io.IO,
-    compose = _.compose,
-    map     = _.map,
-    listen  = _.curry(function(name, el) { return b.fromEventTarget(el, name); }),
-    $       = function (sel) { return document.querySelector(sel); }.toIO();
+  pf.expose(window)
+  var listen  = _.curry(function(name, el) { return b.fromEventTarget(el, name); }),
+      $       = function (sel) { return document.querySelector(sel); },
+      log     = function(x){ console.log(x); return x; };
 
   var isPresent    = compose(L.lt(0), _.get('length')),
     targetValue    = compose(_.get('value'), _.get('target')),
     hasValue       = compose(isPresent, targetValue),
-    toggle         = _.curry(function(el, bool){ el.disabled = !bool; }).toIO();
+    toggle         = _.curry(function(el, bool){ el.disabled = !bool; }),
+    toggleButton   = toggle($('button'));
+
 
   var validityStream = compose(map(hasValue), listen('keyup')),
-    enableIfValue    = _.curry(function(input, btn) {
-      return validityStream(input).map(toggle(btn));
-    }),
-    prog             = pf.liftA2(enableIfValue, $('input'), $('button'));
+      prog = compose(map(toggleButton), validityStream);
 
   //////////////////////////////////////////////////////////////////////////////
-
-  prog.runIO().onValue(runIO);
+  prog($('input')).onValue();
 });

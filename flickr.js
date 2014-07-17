@@ -32,27 +32,25 @@ require([
   'monoids',
   'domReady!'
 ],
-function (_, jQuery, L, pf, Future, b, io, Monoids) {
+function (_, $, L, pf, Future, b, io, Monoids) {
   io.extendFn();
   L.expose(window);
   pf.expose(window);
-  var runIO = io.runIO,
-    $       = function (sel) { return document.querySelector(sel); },
-    getJSON  = function (url) {
+  var getJSON  = function (url) {
       return new Future(function(rej, res){
-        return jQuery.getJSON(url,res);
+        return $.getJSON(url,res);
       });
     },
-    setHtml = _.curry(function(sel, h){ return jQuery(sel).html(h); }).toIO(),
+    setHtml = _.curry(function(sel, h){ return $(sel).html(h); }).toIO(),
     log         = function(x){ console.log(x); return x };
 
 
     var flickrURL = 'http://api.flickr.com/services/feeds/photos_public.gne?format=json&jsoncallback=?',
-        makeImage = function(i){ return jQuery('<img />', {src: i.media.m}); }
+        makeImage = function(i){ return $('<img />', {src: i.media.m}); }
         putOnScreen = compose(setHtml('#main'), map(makeImage), _.get('items'))
         prog = compose(map(putOnScreen), getJSON);
 
   //////////////////////////////////////////////////////////////////////////////
 
-  prog(flickrURL).fork(log, runIO);
+  prog(flickrURL).fork(log, io.runIO);
 });
