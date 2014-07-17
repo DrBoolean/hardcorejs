@@ -41,16 +41,65 @@ function (_, $, L, pf, Future, b, io, Monoids) {
         return $.getJSON(url,res);
       });
     },
-    setHtml = _.curry(function(sel, h){ return $(sel).html(h); }).toIO(),
+    listen      = _.curry(function(name, el) { return b.fromEventTarget(el, name); }),
+    onValue      = _.curry(function(f, s) { return s.onValue(f); }),
+    setHtml = _.curry(function($el, h){
+      $el.html(h);
+      return $el;
+    }).toIO(),
     log         = function(x){ console.log(x); return x };
 
+    var _Widget = function(x) {
+      this.val = x;
+    };
 
-    var flickrURL = 'http://api.flickr.com/services/feeds/photos_public.gne?format=json&jsoncallback=?',
-        makeImage = function(i){ return $('<img />', {src: i.media.m}); }
-        putOnScreen = compose(setHtml('#main'), map(makeImage), _.get('items'))
-        prog = compose(map(putOnScreen), getJSON);
+    var concatInnerHtml = _.curry(function(x,y) {
+      x.append(y.html());
+      y.html('');
+      return x.html();
+    });
+
+    _Widget.prototype.empty = function(){ return Future.of(IO.of($("<div/>"))); }
+    _Widget.prototype.concat = function(y){
+      return liftA2(liftA2(concatInnerHtml), this.val, y.val);
+    }
+
+    var Widget = function(x) {
+      return new _Widget(x);
+    }
+
+    var Flickr = function() {
+      var flickrURL = 'http://api.flickr.com/services/feeds/photos_public.gne?format=json&jsoncallback=?';
+      var $div = $('<div />', {'class': 'flickr'});
+
+      var makeImage = function(i){ return $('<img />', {src: i.media.m, alt: i.title}); },
+          makeHtml = compose(setHtml($div), map(makeImage), _.get('items'), log),
+          widget = compose(map(makeHtml), getJSON);
+
+      return widget(flickrURL);
+      //return Widget(widget(flickrURL));
+    }
 
   //////////////////////////////////////////////////////////////////////////////
 
-  prog(flickrURL).fork(log, io.runIO);
+  var PreviewTitleFlickr = function() {
+    var setPreviewHtml = function(title){ $('#preview').html(title); }.toIO(),
+        showTitle = compose(setPreviewHtml, _.get('alt'), _.get('target')),
+        addListener = compose(map(showTitle), listen('click')),
+        addPopovers = function($el) {
+          addListener($el).onValue(io.runIO);
+          return $el;
+        }.toIO(),
+
+      widget = compose(map(chain(addPopovers)), log, Flickr);
+
+    return widget();
+  }
+
+
+  var placeOnScreen = compose(io.runIO, chain(setHtml($('#flickr1'))));
+  PreviewTitleFlickr().fork(log, placeOnScreen);
+
+  //mconcat([Flickr(), Flickr()]).fork(log, compose(io.runIO, chain(setHtml($('#flickr1')))))
 });
+

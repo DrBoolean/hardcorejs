@@ -29,12 +29,8 @@ require([
   'domReady!'
 ],
 function (_, L, pf, b, io) {
-  pf.expose(window)
-  var listen  = _.curry(function(name, el) { return b.fromEventTarget(el, name); }),
-      $       = function (sel) { return document.querySelector(sel); },
-      log     = function(x){ console.log(x); return x; };
 
-  var isPresent    = compose(L.lt(0), _.get('length')),
+  var isPresent    = compose(L.lt(0), _.get('length'), replace(/\s+/, '')),
     targetValue    = compose(_.get('value'), _.get('target')),
     hasValue       = compose(isPresent, targetValue),
     toggle         = _.curry(function(el, bool){ el.disabled = !bool; }),
