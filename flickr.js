@@ -37,9 +37,6 @@ function (_, jQuery, L, pf, Future, b, io, Monoids) {
   L.expose(window);
   pf.expose(window);
   var runIO = io.runIO,
-    IO      = io.IO,
-    compose = _.compose,
-    map     = _.map,
     $       = function (sel) { return document.querySelector(sel); },
     getJSON  = function (url) {
       return new Future(function(rej, res){
@@ -52,7 +49,7 @@ function (_, jQuery, L, pf, Future, b, io, Monoids) {
 
     var flickrURL = 'http://api.flickr.com/services/feeds/photos_public.gne?format=json&jsoncallback=?',
         makeImage = function(i){ return jQuery('<img />', {src: i.media.m}); }
-        putOnScreen = compose(setHtml('#main'), map(makeImage), _.get('items'), log)
+        putOnScreen = compose(setHtml('#main'), map(makeImage), _.get('items'))
         prog = compose(map(putOnScreen), getJSON);
 
   //////////////////////////////////////////////////////////////////////////////

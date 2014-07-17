@@ -41,11 +41,6 @@ function (_, H, L, pf, Future, b, Monoids) {
   targetValue = compose(_.get('value'), _.get('target')),
   listen      = _.curry(function(name, el) { return b.fromEventTarget(el, name); }),
   $           = function (sel) { return document.querySelector(sel); },
-  getJSON     = function (url) {
-    return new Future(function(rej, res){
-      return jQuery.getJSON(url,res);
-    });
-  },
   setHtml        = _.curry(function(sel, h){ $(sel).innerHTML = h; }),
   getFromStorage = function(name){ return JSON.parse(localStorage[name]); },
   saveToStorage  = _.curry(function(name, val){ localStorage[name] = JSON.stringify(val); return val; }),

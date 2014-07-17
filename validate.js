@@ -19,41 +19,37 @@ requirejs.config({
     array: 'http://looprecur.com/hostedjs/v2/array'
   }
 });
-
 require([
   'ramda',
   'lambda',
   'pointfree',
   'bacon',
-  'io',
   'monoids',
   'domReady!'
 ],
-function (_, L, pf, b, io, Monoids) {
-  io.extendFn();
+function (_, L, pf, b, Monoids) {
   L.expose(window);
   pf.expose(window);
-  var runIO = io.runIO,
-    IO      = io.IO,
-    compose = _.compose,
+  var compose = _.compose,
     map     = _.map,
     getResult     = Monoids.getResult,
     listen  = _.curry(function(name, el) { return b.fromEventTarget(el, name); }),
-    $       = function (sel) { return document.querySelector(sel); }
+    $       = function (sel) { return document.querySelector(sel); },
+    setHtml        = _.curry(function(sel, h){ $(sel).innerHTML = h; }),
+    log            = function(x){ console.log(x); return x },
     All = Monoids.All;
 
-  var isPresent    = compose(lt(0), _.get('length')),
-    hasValue       = compose(isPresent, _.get('value')),
-    log         = function(x){ console.log(x); return x }
-    preventDefault = function(s){ return s.doAction('.preventDefault'); }
+  var isPresent      = compose(All, lt(0), _.get('length'), replace(/\s+/, '')),
+      isEmail        = compose(All, test(/^\w+@[a-zA-Z_]+?\.[a-zA-Z]{2,3}$/)),
+      isLongEnough   = compose(All, lt(7), _.get('length')),
+      targetValue    = compose(_.get('value'), _.get('target')),
+      preventDefault = function(s){ return s.doAction('.preventDefault'); };
 
-    var hasEmail = compose(All, hasValue, $, K('#email')),
-        hasPassword = compose(All, hasValue, $, K('#password')),
-        validate = compose(getResult, mconcat([hasEmail, hasPassword])),
-        submitIfValid = compose(map(validate), preventDefault, listen('submit')),
-        prog = submitIfValid;
+  var validate = compose(getResult, mconcat([isEmail, isLongEnough, isPresent])),
+      emailChanges = compose(map(targetValue), listen('keyup')),
+      prog = compose(map(validate), emailChanges);
 
   //////////////////////////////////////////////////////////////////////////////
 
-  prog($('form')).onValue(log);
+  prog($('#email')).onValue(setHtml('#is-valid'));
 });
