@@ -10,6 +10,7 @@ requirejs.config({
     pointfree: 'https://raw.githack.com/DrBoolean/pointfree-fantasy/master/dist/pointfree.amd',
     bacon: 'https://cdnjs.cloudflare.com/ajax/libs/bacon.js/0.7.14/Bacon',
     future: 'http://looprecur.com/hostedjs/v2/data.future.umd',
+    future: 'http://looprecur.com/hostedjs/v2/data.future.umd',
     io: 'http://looprecur.com/hostedjs/v2/io',
     maybe: 'http://looprecur.com/hostedjs/v2/maybe',
     id: 'http://looprecur.com/hostedjs/v2/id',
@@ -46,60 +47,59 @@ function (_, $, L, pf, Future, b, io, Monoids) {
     setHtml = _.curry(function($el, h){
       $el.html(h);
       return $el;
-    }).toIO(),
+    }),
     log         = function(x){ console.log(x); return x };
+
+    Future.prototype.concat = function(x) {
+      return liftA2(concat, this, x);
+    }
+
+    $.fn.extend({
+      concat: function(x) {
+        return this.append(x[0].innerHTML);
+      }
+    });
 
     var _Widget = function(x) {
       this.val = x;
     };
 
-    var concatInnerHtml = _.curry(function(x,y) {
-      x.append(y.html());
-      y.html('');
-      return x.html();
-    });
-
-    _Widget.prototype.empty = function(){ return Future.of(IO.of($("<div/>"))); }
+    _Widget.prototype.empty = function(){ return Future.of($("<div/>")); }
     _Widget.prototype.concat = function(y){
-      return liftA2(liftA2(concatInnerHtml), this.val, y.val);
+      return liftA2(curry(function(div1, div2){
+        div1.find('img').concat(div2.find('img'))
+      }), this.val, y.val);
+   //   return this.val.concat(y.val);
     }
 
     var Widget = function(x) {
       return new _Widget(x);
     }
 
+    //+ Flickr :: Future(Div)
     var Flickr = function() {
       var flickrURL = 'http://api.flickr.com/services/feeds/photos_public.gne?format=json&jsoncallback=?';
       var $div = $('<div />', {'class': 'flickr'});
 
-      var makeImage = function(i){ return $('<img />', {src: i.media.m, alt: i.title}); },
-          makeHtml = compose(setHtml($div), map(makeImage), _.get('items'), log),
-          widget = compose(map(makeHtml), getJSON);
+      var makeImage = function(i){ return $('<img />', {src: i.media.media}); },
+          makeImages = compose(map(makeImage), _.get('items'))
+          makeTags = compose(_.countBy(id), map(compose(split(''), _.get('tag'))), _.get('items'))
+          makeWidget = liftA2(Widget, makeTags, makeImages),
+          widget = compose(map(makeWidget), getJSON);
 
       return widget(flickrURL);
-      //return Widget(widget(flickrURL));
     }
 
   //////////////////////////////////////////////////////////////////////////////
 
-  var PreviewTitleFlickr = function() {
-    var setPreviewHtml = function(title){ $('#preview').html(title); }.toIO(),
-        showTitle = compose(map(setPreviewHtml), Maybe, _.get('alt'), _.get('target')),
-        addListener = compose(map(showTitle), listen('click')),
-        addPopovers = function($el) {
-          addListener($el).onValue(io.runIO);
-          return $el;
-        }.toIO(),
 
-      widget = compose(map(chain(addPopovers)), log, Flickr);
-
-    return widget();
-  }
+  //var placeOnScreen = compose(io.runIO, chain(setHtml($('#flickr1'))));
+  //Flickr().fork(log, setHtml($('#flickr1')));
+  //Flickr().fork(log, setHtml($('#flickr2')));
+//  mconcat([Flickr(), Flickr()]).fork(log, setHtml($('#flickr1')));
+ // makeTagCloud = 
+ // compose(makeTagCloud, _.countBy(id), map(splitTags))
 
 
-  var placeOnScreen = compose(io.runIO, chain(setHtml($('#flickr1'))));
-  PreviewTitleFlickr().fork(log, placeOnScreen);
-
-  //mconcat([Flickr(), Flickr()]).fork(log, compose(io.runIO, chain(setHtml($('#flickr1')))))
 });
 
