@@ -42,64 +42,68 @@ function (_, $, L, pf, Future, b, io, Monoids) {
         return $.getJSON(url,res);
       });
     },
-    listen      = _.curry(function(name, el) { return b.fromEventTarget(el, name); }),
-    onValue      = _.curry(function(f, s) { return s.onValue(f); }),
-    setHtml = _.curry(function($el, h){
-      $el.html(h);
-      return $el;
-    }),
-    log         = function(x){ console.log(x); return x };
-
-    Future.prototype.concat = function(x) {
-      return liftA2(concat, this, x);
-    }
-
-    $.fn.extend({
-      concat: function(x) {
-        return this.append(x[0].innerHTML);
-      }
-    });
-
-    var _Widget = function(x) {
-      this.val = x;
-    };
-
-    _Widget.prototype.empty = function(){ return Future.of($("<div/>")); }
-    _Widget.prototype.concat = function(y){
-      return liftA2(curry(function(div1, div2){
-        div1.find('img').concat(div2.find('img'))
-      }), this.val, y.val);
-   //   return this.val.concat(y.val);
-    }
-
-    var Widget = function(x) {
-      return new _Widget(x);
-    }
-
-    //+ Flickr :: Future(Div)
-    var Flickr = function() {
-      var flickrURL = 'http://api.flickr.com/services/feeds/photos_public.gne?format=json&jsoncallback=?';
-      var $div = $('<div />', {'class': 'flickr'});
-
-      var makeImage = function(i){ return $('<img />', {src: i.media.media}); },
-          makeImages = compose(map(makeImage), _.get('items'))
-          makeTags = compose(_.countBy(id), map(compose(split(''), _.get('tag'))), _.get('items'))
-          makeWidget = liftA2(Widget, makeTags, makeImages),
-          widget = compose(map(makeWidget), getJSON);
-
-      return widget(flickrURL);
-    }
-
-  //////////////////////////////////////////////////////////////////////////////
+  listen      = _.curry(function(name, el) { return b.fromEventTarget(el, name); }),
+  onValue      = _.curry(function(f, s) { return s.onValue(f); }),
+  setHtml = _.curry(function($el, h){
+    $el.html(h);
+    return $el;
+  }),
+  log         = function(x){ console.log(x); return x };
 
 
-  //var placeOnScreen = compose(io.runIO, chain(setHtml($('#flickr1'))));
-  //Flickr().fork(log, setHtml($('#flickr1')));
-  //Flickr().fork(log, setHtml($('#flickr2')));
-//  mconcat([Flickr(), Flickr()]).fork(log, setHtml($('#flickr1')));
- // makeTagCloud = 
- // compose(makeTagCloud, _.countBy(id), map(splitTags))
+  //  imageTag :: URL -> DOM
+  var imageTag = function (url) { return $('<img />', { src: url }); };
 
+  /////////////////////////////////////////////////////////////////////////////////////
+  // Flickr api
+
+  //  flickrFeed :: Future FlickrSearch
+  var flickrFeed = getJSON('http://api.flickr.com/services/feeds/photos_public.gne?format=json&jsoncallback=?');
+
+  //  imageUrls :: FlickrSearch -> [URL]
+  var imageUrls = compose(_.pluck('m'), _.pluck('media'), _.get('items'));
+
+  //  tags :: FlickrSearch -> Map String Int
+  var tags = compose(_.countBy(_.identity), _.reject(_.isEmpty), _.flatten, _.map(split(' ')), _.pluck('tags'), _.get('items'));
+
+
+  /////////////////////////////////////////////////////////////////////////////////////
+  // PictureBox
+
+  //  PictureBox = data
+  //    images :: [URL]
+  //    tags   :: Map String Int
+  var PictureBox = function(imgs, ts) {
+    this.images = imgs;
+    this.tags   = ts;
+  };
+
+  // instance Monoid PictureBox where
+  PictureBox.prototype.empty = function () { return new PictureBox([], {}); };
+  PictureBox.prototype.concat = function (y) {
+    return new PictureBox(
+      this.images.concat(y.images),
+      this.tags // TODO: properly add tag counts with y.tags
+    );
+  };
+
+  //  renderPictureBox :: PictureBox -> IO DOM
+  var renderPictureBox = function (pb) {
+    return $('<div></div>', {'class': 'flickr'}).append(
+      _.map( imageTag, pb.images )
+    );
+  }.toIO();
+
+  /////////////////////////////////////////////////////////////////////////////////////
+  // Test code
+
+  flickrFeed.fork(log, function (t) {
+    var pb = new PictureBox(imageUrls(t), tags(t));
+    var r = renderPictureBox(
+      pb.concat(pb)
+    ).runIO();
+    $('#flickr1').append(r);
+  });
 
 });
 
