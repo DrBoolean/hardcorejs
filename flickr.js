@@ -51,9 +51,6 @@ function (_, $, L, pf, Future, b, io, Monoids) {
   log         = function(x){ console.log(x); return x };
 
 
-  //  imageTag :: URL -> DOM
-  var imageTag = function (url) { return $('<img />', { src: url }); };
-
   /////////////////////////////////////////////////////////////////////////////////////
   // Flickr api
 
@@ -63,47 +60,19 @@ function (_, $, L, pf, Future, b, io, Monoids) {
   //  imageUrls :: FlickrSearch -> [URL]
   var imageUrls = compose(_.pluck('m'), _.pluck('media'), _.get('items'));
 
-  //  tags :: FlickrSearch -> Map String Int
-  var tags = compose(_.countBy(_.identity), _.reject(_.isEmpty), _.flatten, _.map(split(' ')), _.pluck('tags'), _.get('items'));
+  //  imageTag :: URL -> DOM
+  var imageTag = function (url) { return $('<img />', { src: url }); };
 
+  var makeImages = compose(map(imageTag), imageUrls);
 
-  /////////////////////////////////////////////////////////////////////////////////////
-  // PictureBox
+  //  widget :: _ -> Future DOM
+  var widget = map(makeImages, flickrFeed);
 
-  //  PictureBox = data
-  //    images :: [URL]
-  //    tags   :: Map String Int
-  var PictureBox = function(imgs, ts) {
-    this.images = imgs;
-    this.tags   = ts;
-  };
-
-  // instance Monoid PictureBox where
-  PictureBox.prototype.empty = function () { return new PictureBox([], {}); };
-  PictureBox.prototype.concat = function (y) {
-    return new PictureBox(
-      this.images.concat(y.images),
-      this.tags // TODO: properly add tag counts with y.tags
-    );
-  };
-
-  //  renderPictureBox :: PictureBox -> IO DOM
-  var renderPictureBox = function (pb) {
-    return $('<div></div>', {'class': 'flickr'}).append(
-      _.map( imageTag, pb.images )
-    );
-  }.toIO();
 
   /////////////////////////////////////////////////////////////////////////////////////
   // Test code
 
-  flickrFeed.fork(log, function (t) {
-    var pb = new PictureBox(imageUrls(t), tags(t));
-    var r = renderPictureBox(
-      pb.concat(pb)
-    ).runIO();
-    $('#flickr1').append(r);
-  });
+  widget.fork(log, setHtml($('#flickr1')));
 
 });
 
