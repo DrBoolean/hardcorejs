@@ -84,7 +84,7 @@ function (_, $, L, pf, Future, b, io, Monoids) {
 
   var PreviewTitleFlickr = function() {
     var setPreviewHtml = function(title){ $('#preview').html(title); }.toIO(),
-        showTitle = compose(setPreviewHtml, _.get('alt'), _.get('target')),
+        showTitle = compose(map(setPreviewHtml), Maybe, _.get('alt'), _.get('target')),
         addListener = compose(map(showTitle), listen('click')),
         addPopovers = function($el) {
           addListener($el).onValue(io.runIO);
