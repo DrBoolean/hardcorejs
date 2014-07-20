@@ -50,9 +50,57 @@ function (_, $, L, pf, Future, b, io, Monoids) {
   }),
   log         = function(x){ console.log(x); return x };
 
- Future.prototype.concat = function(x) {
-   return liftA2(concat, this, x);
- }
+  var _empty = function() { return {}; };
+
+  Object.defineProperty(Object.prototype, 'empty',{
+      value: _empty,
+      writable: true,
+      configurable: true,
+      enumerable: false
+  });
+
+  var _concat = function(y) {
+    var that = this;
+    Object.keys(y).reduce(function(acc, x) {
+      if(acc[x]) {
+        acc[x] = y[x].concat(acc[x]);
+      } else {
+        acc[x] = y[x];
+      }
+      return acc;
+    }, that);
+    return that;
+  };
+
+  Object.defineProperty(Object.prototype, 'concat',{
+      value: _concat,
+      writable: true,
+      configurable: true,
+      enumerable: false
+  });
+
+  var Tuple = _.curry(function(x, y) { return new _Tuple(x, y) })
+
+  var _Tuple = function(x, y) {
+    this[0] = x;
+    this[1] = y;
+  }
+
+  _Tuple.prototype.inspect = function() {
+    return 'Tuple('+inspectIt(this[0])+' '+inspectIt(this[1])+')';
+  }
+
+  _Tuple.prototype.empty = function() { return Tuple(this[0].empty(), this[1].empty()) };
+
+  _Tuple.prototype.concat = function(t2) {
+    return Tuple(this[0].concat(t2[0]), this[1].concat(t2[1]))
+  };
+
+  Future.prototype.concat = function(x) {
+    return liftA2(concat, this, x);
+  }
+
+  //TODO: Remove everything above
   /////////////////////////////////////////////////////////////////////////////////////
   // PictureBox
 
@@ -71,6 +119,9 @@ function (_, $, L, pf, Future, b, io, Monoids) {
     return PictureBox(this.val.concat(y.val));
   };
 
+  //  imageTag :: URL -> DOM
+  var imageTag = function (url) { return $('<img />', { src: url }); };
+
   /////////////////////////////////////////////////////////////////////////////////////
   // Flickr api
 
@@ -80,13 +131,17 @@ function (_, $, L, pf, Future, b, io, Monoids) {
   //  imageUrls :: FlickrSearch -> [URL]
   var imageUrls = compose(_.pluck('m'), _.pluck('media'), _.get('items'));
 
-  //  imageTag :: URL -> DOM
-  var imageTag = function (url) { return $('<img />', { src: url }); };
+  //  images :: [URL] -> [DOM]
+  var images = compose(map(imageTag), imageUrls);
 
-  var makeImages = compose(map(imageTag), imageUrls);
+  //  tags :: FlickrSearch -> Map String Int
+  var tags = compose(_.countBy(_.identity), _.reject(_.isEmpty), _.flatten, _.map(split(' ')), _.pluck('tags'), _.get('items'));
 
-  //  widget :: Future DOM
-  var widget = PictureBox(map(makeImages, flickrFeed));
+  //  imagesAndTags :: Tuple [DOM] (Map String Int)
+  var imagesAndTags = liftA2(Tuple, images, tags)
+
+  //  widget :: Future (Tuple DOM (Map String Int))
+  var widget = PictureBox(map(imagesAndTags, flickrFeed));
 
 
   /////////////////////////////////////////////////////////////////////////////////////
@@ -101,17 +156,24 @@ function (_, $, L, pf, Future, b, io, Monoids) {
   //  imageUrls :: YoutubeSearch -> [URL]
   var imageUrls = compose(map(firstUrl), _.pluck('media$thumbnail'), _.pluck('media$group'), _.get('entry'), _.get('feed'));
 
-  //  imageTag :: URL -> DOM
-  var imageTag = function (url) { return $('<img />', { src: url }); };
+  //  images :: [URL] -> [DOM]
+  var images = compose(map(imageTag), imageUrls);
 
-  var makeImages = compose(map(imageTag), imageUrls);
+  //  tags :: YoutubeSearch -> Map String Int
+  var tags = compose(_.countBy(_.identity), _.reject(_.isEmpty), map(compose(_.get('label'), _.last, _.get('category'))), _.get('entry'), _.get('feed'));
+
+  //  imagesAndTags :: Tuple [DOM] (Map String Int)
+  var imagesAndTags = liftA2(Tuple, images, tags)
 
   //  youtube_widget :: Future DOM
-  var youtube_widget = PictureBox(map(makeImages, youtubeFeed));
+  var youtube_widget = PictureBox(map(imagesAndTags, youtubeFeed));
 
   /////////////////////////////////////////////////////////////////////////////////////
   // Test code
 
-  mconcat([youtube_widget, widget]).fork(log, setHtml($('#flickr1')));
+  mconcat([widget, youtube_widget]).fork(log, function(x){
+    console.log(x);
+    compose(setHtml($('#flickr1')), _.first)(x)
+  });
 });
 
