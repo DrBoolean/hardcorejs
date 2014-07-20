@@ -50,12 +50,32 @@ function (_, $, L, pf, Future, b, io, Monoids) {
   }),
   log         = function(x){ console.log(x); return x };
 
+ Future.prototype.concat = function(x) {
+   return liftA2(concat, this, x);
+ }
+  /////////////////////////////////////////////////////////////////////////////////////
+  // PictureBox
+
+  //  PictureBox = data
+  //    val :: Future([URL])
+  var _PictureBox = function(val) {
+    this.val = val;
+    this.fork = this.val.fork;
+  };
+
+  var PictureBox = function(x){ return new _PictureBox(x); }
+
+  // instance Monoid PictureBox where
+  _PictureBox.prototype.empty = function () { return PictureBox(Future.of([])); };
+  _PictureBox.prototype.concat = function (y) {
+    return PictureBox(this.val.concat(y.val));
+  };
 
   /////////////////////////////////////////////////////////////////////////////////////
   // Flickr api
 
   //  flickrFeed :: Future FlickrSearch
-  var flickrFeed = getJSON('http://api.flickr.com/services/feeds/photos_public.gne?format=json&jsoncallback=?');
+  var flickrFeed = getJSON('http://api.flickr.com/services/feeds/photos_public.gne?tags=cat&format=json&jsoncallback=?');
 
   //  imageUrls :: FlickrSearch -> [URL]
   var imageUrls = compose(_.pluck('m'), _.pluck('media'), _.get('items'));
@@ -65,14 +85,13 @@ function (_, $, L, pf, Future, b, io, Monoids) {
 
   var makeImages = compose(map(imageTag), imageUrls);
 
-  //  widget :: _ -> Future DOM
-  var widget = map(makeImages, flickrFeed);
+  //  widget :: Future DOM
+  var widget = PictureBox(map(makeImages, flickrFeed));
 
 
   /////////////////////////////////////////////////////////////////////////////////////
   // Test code
 
-  widget.fork(log, setHtml($('#flickr1')));
-
+  mconcat([widget, widget]).fork(log, setHtml($('#flickr1')));
 });
 
