@@ -90,8 +90,28 @@ function (_, $, L, pf, Future, b, io, Monoids) {
 
 
   /////////////////////////////////////////////////////////////////////////////////////
+  // Youtube api
+
+  //  youtubeFeed :: Future YoutubeSearch
+  var youtubeFeed = getJSON('http://gdata.youtube.com/feeds/api/videos?q=cats&alt=json');
+
+  //  firstUrl :: [{url: String}] -> String
+  var firstUrl = compose(_.get('url'), _.first);
+
+  //  imageUrls :: YoutubeSearch -> [URL]
+  var imageUrls = compose(map(firstUrl), _.pluck('media$thumbnail'), _.pluck('media$group'), _.get('entry'), _.get('feed'));
+
+  //  imageTag :: URL -> DOM
+  var imageTag = function (url) { return $('<img />', { src: url }); };
+
+  var makeImages = compose(map(imageTag), imageUrls);
+
+  //  youtube_widget :: Future DOM
+  var youtube_widget = PictureBox(map(makeImages, youtubeFeed));
+
+  /////////////////////////////////////////////////////////////////////////////////////
   // Test code
 
-  mconcat([widget, widget]).fork(log, setHtml($('#flickr1')));
+  mconcat([youtube_widget, widget]).fork(log, setHtml($('#flickr1')));
 });
 
