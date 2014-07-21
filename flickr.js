@@ -1,58 +1,27 @@
 /*jslint nomen: true */
 requirejs.config({
-  shim: {
-  },
+  shim: {},
   paths: {
     domReady: 'https://cdnjs.cloudflare.com/ajax/libs/require-domReady/2.0.1/domReady.min',
     jquery: 'https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min',
     ramda: 'https://cdnjs.cloudflare.com/ajax/libs/ramda/0.2.3/ramda.min',
-    lambda: 'https://raw.githack.com/loop-recur/lambdajs/master/dist/lambda.amd',
-    pointfree: 'https://raw.githack.com/DrBoolean/pointfree-fantasy/master/dist/pointfree.amd',
-    bacon: 'https://cdnjs.cloudflare.com/ajax/libs/bacon.js/0.7.14/Bacon',
     future: 'http://looprecur.com/hostedjs/v2/data.future.umd',
-    future: 'http://looprecur.com/hostedjs/v2/data.future.umd',
-    io: 'http://looprecur.com/hostedjs/v2/io',
-    maybe: 'http://looprecur.com/hostedjs/v2/maybe',
-    id: 'http://looprecur.com/hostedjs/v2/id',
-    monoids: 'http://looprecur.com/hostedjs/v2/monoids',
-    either: 'http://looprecur.com/hostedjs/v2/data.either.umd',
-    string: 'http://looprecur.com/hostedjs/v2/string',
-    fn: 'http://looprecur.com/hostedjs/v2/function',
-    array: 'http://looprecur.com/hostedjs/v2/array'
+    hcjs: 'http://looprecur.com/hostedjs/v2/hcjs'
   }
 });
 
 require([
   'ramda',
   'jquery',
-  'lambda',
-  'pointfree',
   'future',
-  'bacon',
-  'io',
-  'monoids',
+  'hcjs',
   'domReady!'
 ],
-function (_, $, L, pf, Future, b, io, Monoids) {
-  io.extendFn();
-  L.expose(window);
-  pf.expose(window);
-  var getJSON  = function (url) {
-      return new Future(function(rej, res){
-        return $.getJSON(url,res);
-      });
-    },
-  listen      = _.curry(function(name, el) { return b.fromEventTarget(el, name); }),
-  onValue      = _.curry(function(f, s) { return s.onValue(f); }),
-  setHtml = _.curry(function($el, h){
-    $el.html(h);
-    return $el;
-  }),
-  log         = function(x){ console.log(x); return x };
+function (_, $, Future, hcjs) {
 
- Future.prototype.concat = function(x) {
-   return liftA2(concat, this, x);
- }
+  //  imageTag :: URL -> DOM
+  var imageTag = function (url) { return $('<img />', { src: url }); };
+
   /////////////////////////////////////////////////////////////////////////////////////
   // PictureBox
 
@@ -74,24 +43,27 @@ function (_, $, L, pf, Future, b, io, Monoids) {
   /////////////////////////////////////////////////////////////////////////////////////
   // Flickr api
 
-  //  flickrFeed :: Future FlickrSearch
-  var flickrFeed = getJSON('http://api.flickr.com/services/feeds/photos_public.gne?tags=cat&format=json&jsoncallback=?');
+  //  url :: String -> URL
+  var url = function(t) {
+    return 'http://api.flickr.com/services/feeds/photos_public.gne?tags='+t+'&format=json&jsoncallback=?';
+  };
 
-  //  imageUrls :: FlickrSearch -> [URL]
-  var imageUrls = compose(_.pluck('m'), _.pluck('media'), _.get('items'));
+  //  src :: FlickrItem -> URL
+  var src = compose(_.get('m'), _.get('media'));
 
-  //  imageTag :: URL -> DOM
-  var imageTag = function (url) { return $('<img />', { src: url }); };
+  //  srcs :: FlickrSearch -> [URL]
+  var srcs = compose(map(src), _.get('items'));
 
-  var makeImages = compose(map(imageTag), imageUrls);
+  //  images :: FlickrSearch -> [DOM]
+  var images = compose(map(imageTag), srcs);
 
-  //  widget :: Future DOM
-  var widget = PictureBox(map(makeImages, flickrFeed));
+  //  widget :: PictureBox
+  var widget = compose(PictureBox, map(images), getJSON, url);
 
 
   /////////////////////////////////////////////////////////////////////////////////////
   // Test code
 
-  mconcat([widget, widget]).fork(log, setHtml($('#flickr1')));
+  mconcat([widget('cats'), widget('dogs')]).fork(log, setHtml($('#flickr')));
 });
 
