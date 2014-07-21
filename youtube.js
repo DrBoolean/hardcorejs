@@ -1,80 +1,54 @@
 /*jslint nomen: true */
 requirejs.config({
-  shim: {
-  },
+  shim: {},
   paths: {
     domReady: 'https://cdnjs.cloudflare.com/ajax/libs/require-domReady/2.0.1/domReady.min',
     jquery: 'https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min',
     ramda: 'https://cdnjs.cloudflare.com/ajax/libs/ramda/0.2.3/ramda.min',
-    lambda: 'https://raw.githack.com/loop-recur/lambdajs/master/dist/lambda.amd',
-    pointfree: 'https://raw.githack.com/DrBoolean/pointfree-fantasy/master/dist/pointfree.amd',
-    bacon: 'https://cdnjs.cloudflare.com/ajax/libs/bacon.js/0.7.14/Bacon',
     future: 'http://looprecur.com/hostedjs/v2/data.future.umd',
-    future: 'http://looprecur.com/hostedjs/v2/data.future.umd',
-    io: 'http://looprecur.com/hostedjs/v2/io',
-    maybe: 'http://looprecur.com/hostedjs/v2/maybe',
-    id: 'http://looprecur.com/hostedjs/v2/id',
-    monoids: 'http://looprecur.com/hostedjs/v2/monoids',
-    either: 'http://looprecur.com/hostedjs/v2/data.either.umd',
-    string: 'http://looprecur.com/hostedjs/v2/string',
-    fn: 'http://looprecur.com/hostedjs/v2/function',
-    array: 'http://looprecur.com/hostedjs/v2/array'
+    hcjs: 'http://looprecur.com/hostedjs/v2/hcjs'
   }
 });
 
 require([
   'ramda',
   'jquery',
-  'lambda',
-  'pointfree',
   'future',
-  'bacon',
-  'io',
-  'monoids',
+  'hcjs',
   'domReady!'
 ],
-function (_, $, L, pf, Future, b, io, Monoids) {
-  io.extendFn();
-  L.expose(window);
-  pf.expose(window);
-  var getJSON  = function (url) {
-      return new Future(function(rej, res){
-        return $.getJSON(url,res);
-      });
-    },
-  listen      = _.curry(function(name, el) { return b.fromEventTarget(el, name); }),
-  onValue      = _.curry(function(f, s) { return s.onValue(f); }),
-  setHtml = _.curry(function($el, h){
-    $el.html(h);
-    return $el;
-  }),
-  log         = function(x){ console.log(x); return x };
-
-
-  /////////////////////////////////////////////////////////////////////////////////////
-  // Youtube api
-
-  //  youtubeFeed :: Future YoutubeSearch
-  var youtubeFeed = getJSON('http://gdata.youtube.com/feeds/api/videos?q=cats&alt=json');
-
-  //  firstUrl :: [{url: String}] -> String
-  var firstUrl = compose(_.get('url'), _.first);
-
-  //  imageUrls :: YoutubeSearch -> [URL]
-  var imageUrls = compose(map(firstUrl), _.pluck('media$thumbnail'), _.pluck('media$group'), _.get('entry'), _.get('feed'));
+function (_, $, Future, hcjs) {
 
   //  imageTag :: URL -> DOM
   var imageTag = function (url) { return $('<img />', { src: url }); };
 
-  var makeImages = compose(map(imageTag), imageUrls);
+  /////////////////////////////////////////////////////////////////////////////////////
+  // Youtube api
+
+  //  url :: String -> URL
+  var url = function(t) {
+    return 'http://gdata.youtube.com/feeds/api/videos?q='+t+'&alt=json';
+  }
+
+  //  youtubeFeed :: Future YoutubeSearch
+  var youtubeFeed = getJSON('http://gdata.youtube.com/feeds/api/videos?q=cats&alt=json');
+
+  //  src :: YoutubeEntry -> URL
+  var src = compose(_.get('url'), _.first, _.get('media$thumbnail'), _.get('media$group'))
+
+  //  srcs :: YoutubeSearch -> [URL]
+  var srcs = compose(map(src), _.get('entry'), _.get('feed'));
+
+  //  images :: YoutubeSearch -> [DOM]
+  var images = compose(map(imageTag), srcs);
 
   //  widget :: Future DOM
-  var widget = map(makeImages, youtubeFeed);
+  var widget = compose(map(images), getJSON, url);
 
 
   /////////////////////////////////////////////////////////////////////////////////////
   // Test code
 
-  widget.fork(log, setHtml($('#youtube')));
+  widget('cats').fork(log, setHtml($('#youtube')));
 });
 

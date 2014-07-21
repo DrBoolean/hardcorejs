@@ -25,18 +25,19 @@ function (_, $, Future, hcjs) {
   ////////////////////////////////////////////
   // Flickr api
 
-  var getUrl = function(t) {
+  //  url :: String -> URL
+  var url = function(t) {
     return 'http://api.flickr.com/services/feeds/photos_public.gne?tags='+t+'&format=json&jsoncallback=?';
   };
 
-  //  imageUrls :: FlickrSearch -> [URL]
-  var imageUrls = compose(_.pluck('m'), _.pluck('media'), _.get('items'));
+  //  srcs :: FlickrSearch -> [URL]
+  var srcs = compose(_.pluck('m'), _.pluck('media'), _.get('items'));
 
   //  images :: FlickrSearch -> [DOM]
-  var images = compose(map(imageTag), imageUrls);
+  var images = compose(map(imageTag), srcs);
 
   //  widget :: Future [DOM]
-  var widget = compose(map(makeImages), getJSON, getUrl);
+  var widget = compose(map(images), getJSON, url);
 
 
   /////////////////////////////////////////////////////////////////////////////////////
