@@ -81,6 +81,6 @@ function (_, $, Future, hcjs) {
 
   mconcat([widget('cats'), widget('dogs')]).fork(log, function(x){
     compose(setHtml($('#flickr')), _.first)(x)
-    compose(setHtml($('#tagcloud')), _.get(1))(x)
+    compose(setHtml($('#tagcloud')), _.last)(x)
   });
 });
