@@ -25,9 +25,10 @@ function (_, $, Future, hcjs) {
   ////////////////////////////////////////////
   // Flickr api
 
-  //  flickrFeed :: Future FlickrSearch
-  var flickrFeed = getJSON('http://api.flickr.com/services/feeds/photos_public.gne?tags=cat&format=json&jsoncallback=?');
-  
+  var getUrl = function(t) {
+    return 'http://api.flickr.com/services/feeds/photos_public.gne?tags='+t+'&format=json&jsoncallback=?';
+  };
+
   //  imageUrls :: FlickrSearch -> [URL]
   var imageUrls = compose(_.pluck('m'), _.pluck('media'), _.get('items'));
 
@@ -35,12 +36,12 @@ function (_, $, Future, hcjs) {
   var images = compose(map(imageTag), imageUrls);
 
   //  widget :: Future [DOM]
-  var widget = map(makeImages, flickrFeed);
+  var widget = compose(map(makeImages), getJSON, getUrl);
 
 
   /////////////////////////////////////////////////////////////////////////////////////
   // Test code
 
-  widget.fork(log, setHtml($('#flickr')));
+  widget('cats').fork(log, setHtml($('#flickr')));
 });
 
