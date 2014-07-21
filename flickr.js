@@ -6,8 +6,6 @@ requirejs.config({
     jquery: 'https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min',
     ramda: 'https://cdnjs.cloudflare.com/ajax/libs/ramda/0.2.3/ramda.min',
     future: 'http://looprecur.com/hostedjs/v2/data.future.umd',
-    maybe: 'http://looprecur.com/hostedjs/v2/maybe',
-    id: 'http://looprecur.com/hostedjs/v2/id',
     hcjs: 'http://looprecur.com/hostedjs/v2/hcjs'
   }
 });
@@ -20,21 +18,6 @@ require([
   'domReady!'
 ],
 function (_, $, Future, hcjs) {
-
-  //  PictureBox = data
-  //    val :: Future(a)
-  var _PictureBox = function(val) {
-    this.val = val;
-    this.fork = this.val.fork;
-  };
-
-  var PictureBox = function(x){ return new _PictureBox(x); }
-
-  // instance Monoid PictureBox where
-  _PictureBox.prototype.empty = function () { return PictureBox(Future.of(Tuple)); };
-  _PictureBox.prototype.concat = function (y) {
-    return PictureBox(this.val.concat(y.val));
-  };
 
   //  imageTag :: URL -> DOM
   var imageTag = function (url) { return $('<img />', { src: url }); };
@@ -49,57 +32,55 @@ function (_, $, Future, hcjs) {
   }
 
   /////////////////////////////////////////////////////////////////////////////////////
-  // Flickr api
+  // PictureBox
 
-  //  flickrFeed :: Future FlickrSearch
-  var flickrFeed = getJSON('http://api.flickr.com/services/feeds/photos_public.gne?tags=cat&format=json&jsoncallback=?');
+  //  PictureBox = data
+  //    val :: Future([URL])
+  var _PictureBox = function(val) {
+    this.val = val;
+    this.fork = this.val.fork;
+  };
 
-  //  imageUrls :: FlickrSearch -> [URL]
-  var imageUrls = compose(_.pluck('m'), _.pluck('media'), _.get('items'));
+  var PictureBox = function(x){ return new _PictureBox(x); }
 
-  //  images :: [URL] -> [DOM]
-  var images = compose(map(imageTag), imageUrls);
-
-  //  tags :: FlickrSearch -> [DOM]
-  var tags = compose(countToP, _.countBy(_.identity), _.reject(_.isEmpty), _.flatten, _.map(split(' ')), _.pluck('tags'), _.get('items'));
-
-  //  imagesAndTags :: Tuple [DOM] [DOM]
-  var imagesAndTags = liftA2(Tuple, images, tags)
-
-  //  widget :: PictureBox
-  var widget = PictureBox(map(imagesAndTags, flickrFeed));
-
+  // instance Monoid PictureBox where
+  _PictureBox.prototype.empty = function () { return PictureBox(Future.of(Tuple)); };
+  _PictureBox.prototype.concat = function (y) {
+    return PictureBox(this.val.concat(y.val));
+  };
 
   /////////////////////////////////////////////////////////////////////////////////////
-  // Youtube api
+  // Flickr api
 
-  //  youtubeFeed :: Future YoutubeSearch
-  var youtubeFeed = getJSON('http://gdata.youtube.com/feeds/api/videos?q=cats&alt=json');
+  //  url :: String -> URL
+  var url = function(t) {
+    return 'http://api.flickr.com/services/feeds/photos_public.gne?tags='+t+'&format=json&jsoncallback=?';
+  };
 
-  //  firstUrl :: [{url: String}] -> String
-  var firstUrl = compose(_.get('url'), _.first);
+  //  src :: FlickrItem -> URL
+  var src = compose(_.get('m'), _.get('media'));
 
-  //  imageUrls :: YoutubeSearch -> [URL]
-  var imageUrls = compose(map(firstUrl), _.pluck('media$thumbnail'), _.pluck('media$group'), _.get('entry'), _.get('feed'));
+  //  srcs :: FlickrSearch -> [URL]
+  var srcs = compose(map(src), _.get('items'));
 
-  //  images :: [URL] -> [DOM]
-  var images = compose(map(imageTag), imageUrls);
+  //  images :: FlickrSearch -> [DOM]
+  var images = compose(map(makeImage), srcs);
 
-  //  tags :: YoutubeSearch -> [DOM]
-  var tags = compose(countToP, _.countBy(_.identity), _.reject(_.isEmpty), map(compose(_.get('label'), _.last, _.get('category'))), _.get('entry'), _.get('feed')); 
+  //  tags :: FlickrSearch -> [DOM]
+  var tags = compose(countToP, _.countBy(_.identity), _.reject(_.isEmpty), chain(split(' ')), _.pluck('tags'), _.get('items'));
 
   //  imagesAndTags :: Tuple [DOM] [DOM]
-  var imagesAndTags = liftA2(Tuple, images, tags)
+  var imagesAndTags = liftA2(Tuple, images, tags);
 
-  //  youtube_widget :: PictureBox
-  var youtube_widget = PictureBox(map(imagesAndTags, youtubeFeed));
+  //  widget :: PictureBox
+  var widget = compose(PictureBox, map(imagesAndTags), getJSON, url);
+
 
   /////////////////////////////////////////////////////////////////////////////////////
   // Test code
 
-  mconcat([widget, youtube_widget]).fork(log, function(x){
+  mconcat([widget('cats'), widget('dogs')]).fork(log, function(x){
     compose(setHtml($('#flickr')), _.first)(x)
-    compose(setHtml($('#tagcloud')), _.get(1))(x)
+    compose(setHtml($('#tagcloud')), _.last)(x)
   });
 });
-
