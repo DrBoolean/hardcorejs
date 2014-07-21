@@ -30,11 +30,8 @@ function (_, $, Future, hcjs) {
     return 'http://gdata.youtube.com/feeds/api/videos?q='+t+'&alt=json';
   }
 
-  //  youtubeFeed :: Future YoutubeSearch
-  var youtubeFeed = getJSON('http://gdata.youtube.com/feeds/api/videos?q=cats&alt=json');
-
   //  src :: YoutubeEntry -> URL
-  var src = compose(_.get('url'), _.first, _.get('media$thumbnail'), _.get('media$group'))
+  var src = compose(_.get('url'), _.first, _.get('media$thumbnail'), _.get('media$group'));
 
   //  srcs :: YoutubeSearch -> [URL]
   var srcs = compose(map(src), _.get('entry'), _.get('feed'));
