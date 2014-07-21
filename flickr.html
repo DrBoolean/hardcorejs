@@ -4,6 +4,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.11/require.min.js"></script>
     <script src="flickr.js"></script>
     <style>
+      body {
+        font-size: 8px;
+      }
       .flickr {
         padding: 5px;
         border: 1px solid black;
@@ -14,6 +17,13 @@
         max-width: 80px;
         margin: 5px;
       }
+      #tagcloud {
+        float: right;
+        width: 20%;
+      }
+      #tagcloud a {
+        display: inline-block;
+      }
     </style>
     <meta charset="utf-8">
     <title>JS Bin</title>
@@ -21,8 +31,9 @@
   <body>
 
   <div id="main">
-    <h2>Photo Stream 1 <span id="preview"></span></h2>
-    <div id="flickr1"></div>
+    <div id="tagcloud"></div>
+    <h2>Photo Stream 1</h2>
+    <div id="flickr"></div>
   </div>
 
   </body>
