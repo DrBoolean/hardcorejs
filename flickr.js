@@ -6,8 +6,6 @@ requirejs.config({
     jquery: 'https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min',
     ramda: 'https://cdnjs.cloudflare.com/ajax/libs/ramda/0.2.3/ramda.min',
     future: 'http://looprecur.com/hostedjs/v2/data.future.umd',
-    maybe: 'http://looprecur.com/hostedjs/v2/maybe',
-    id: 'http://looprecur.com/hostedjs/v2/id',
     hcjs: 'http://looprecur.com/hostedjs/v2/hcjs'
   }
 });
