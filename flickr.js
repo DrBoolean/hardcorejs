@@ -30,8 +30,11 @@ function (_, $, Future, hcjs) {
     return 'http://api.flickr.com/services/feeds/photos_public.gne?tags='+t+'&format=json&jsoncallback=?';
   };
 
+  //  src :: FlickrItem -> URL
+  var src = compose(_.get('m'), _.get('media'));
+
   //  srcs :: FlickrSearch -> [URL]
-  var srcs = compose(_.pluck('m'), _.pluck('media'), _.get('items'));
+  var srcs = compose(map(src), _.get('items'));
 
   //  images :: FlickrSearch -> [DOM]
   var images = compose(map(imageTag), srcs);
