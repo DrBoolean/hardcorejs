@@ -26,8 +26,8 @@ function (_, $, Future, hcjs) {
   // Flickr api
 
   //  flickrFeed :: Future FlickrSearch
-  var flickrFeed = getJSON('http://api.flickr.com/services/feeds/photos_public.gne?format=json&jsoncallback=?');
-
+  var flickrFeed = getJSON('http://api.flickr.com/services/feeds/photos_public.gne?tags=cat&format=json&jsoncallback=?');
+  
   //  imageUrls :: FlickrSearch -> [URL]
   var imageUrls = compose(_.pluck('m'), _.pluck('media'), _.get('items'));
 
