@@ -26,7 +26,7 @@ function (_, $, Future, hcjs) {
   // PictureBox
 
   //  PictureBox = data
-  //    val :: Future([URL])
+  //    val :: Future(a)
   var _PictureBox = function(val) {
     this.val = val;
     this.fork = this.val.fork;
@@ -57,7 +57,7 @@ function (_, $, Future, hcjs) {
   //  images :: FlickrSearch -> [DOM]
   var images = compose(map(imageTag), srcs);
 
-  //  widget :: PictureBox
+  //  widget :: String -> PictureBox
   var widget = compose(PictureBox, map(images), getJSON, url);
 
 
