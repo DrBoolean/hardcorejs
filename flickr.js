@@ -67,7 +67,7 @@ function (_, $, Future, hcjs) {
   var images = compose(map(imageTag), srcs);
 
   //  tags :: FlickrSearch -> [DOM]
-  var tags = compose(countToP, _.countBy(_.identity), _.reject(_.isEmpty), chain(split(' ')), _.pluck('tags'), _.get('items'));
+  var tags = compose(countToP, _.countBy(_.identity), _.reject(_.isEmpty), _.flatten, _.map(split(' ')), _.pluck('tags'), _.get('items'));
 
   //  imagesAndTags :: Tuple [DOM] [DOM]
   var imagesAndTags = liftA2(Tuple, images, tags)
