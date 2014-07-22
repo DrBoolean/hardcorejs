@@ -39,7 +39,7 @@ function (_, $, Future, hcjs) {
   //  images :: FlickrSearch -> [DOM]
   var images = compose(map(imageTag), srcs);
 
-  //  widget :: Future [DOM]
+  //  widget :: String -> Future [DOM]
   var widget = compose(map(images), getJSON, url);
 
 
