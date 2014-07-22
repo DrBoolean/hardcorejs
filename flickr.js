@@ -35,7 +35,7 @@ function (_, $, Future, hcjs) {
   // PictureBox
 
   //  PictureBox = data
-  //    val :: Future([URL])
+  //    val :: Future(a)
   var _PictureBox = function(val) {
     this.val = val;
     this.fork = this.val.fork;
@@ -72,7 +72,7 @@ function (_, $, Future, hcjs) {
   //  imagesAndTags :: Tuple [DOM] [DOM]
   var imagesAndTags = liftA2(Tuple, images, tags)
 
-  //  widget :: PictureBox
+  //  widget :: String -> PictureBox
   var widget = compose(PictureBox, map(imagesAndTags), getJSON, url);
 
 
