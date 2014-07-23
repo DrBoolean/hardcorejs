@@ -50,5 +50,5 @@ require([
     /////////////////////////////////////////////////////////////////////////////////////
     // Test code
 
-    widget('cats').fork(log, setHtml($('#flickr')));
+    widget('cat').fork(log, setHtml($('#flickr')));
   });

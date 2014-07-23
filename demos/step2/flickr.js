@@ -72,5 +72,5 @@ require([
     /////////////////////////////////////////////////////////////////////////////////////
     // Test code
 
-    mconcat([widget('cats'), widget('dogs')]).fork(log, setHtml($('#flickr')));
+    mconcat([widget('cat'), widget('dog')]).fork(log, setHtml($('#flickr')));
   });

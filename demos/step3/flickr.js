@@ -11,89 +11,67 @@ requirejs.config({
 });
 
 require([
-    'ramda',
-    'jquery',
-    'future',
-    'hcjs',
-    'domReady!'
-  ],
-  function (_, $, Future, hcjs) {
+  'ramda',
+  'jquery',
+  'future',
+  'hcjs',
+  'domReady!'
+],
+function (_, $, Future, hcjs) {
 
-    //  imageTag :: URL -> DOM
-    var imageTag = function (url) {
-      return $('<img />', {
-        src: url
-      });
-    };
+  //  imageTag :: URL -> DOM
+  var imageTag = function (url) { return $('<img />', { src: url }); };
 
-    //  aTag :: {count: Int, text: String} -> DOM
-    var aTag = function (t, c) {
-      return $('<a />', {
-        style: 'font-size:' + c + 'em',
-        html: t
-      });
-    };
+  /////////////////////////////////////////////////////////////////////////////////////
+  // PictureBox
 
-    var countToP = function (counts) {
-      return Object.keys(counts).map(function (t) {
-        return aTag(t, counts[t]);
-      });
-    };
+  //  PictureBox = data
+  //    val :: Future(a)
+  var _PictureBox = function(val) {
+    this.val = val;
+    this.fork = function(a, b){ return val.fork(a, b); };
+  };
 
-    /////////////////////////////////////////////////////////////////////////////////////
-    // PictureBox
+  var PictureBox = function(x){ return new _PictureBox(x); }
 
-    //  PictureBox = data
-    //    val :: Future(a)
-    var _PictureBox = function (val) {
-      this.val = val;
-      this.fork = this.val.fork;
-    };
+  // instance Monoid PictureBox where
+  _PictureBox.prototype.empty = function () { return PictureBox(Future.of([])); };
+  _PictureBox.prototype.concat = function (y) {
+    return PictureBox(this.val.concat(y.val));
+  };
 
-    var PictureBox = function (x) {
-      return new _PictureBox(x);
-    };
+  _PictureBox.prototype.map = function (f) { return PictureBox(this.val.map(f)); };
+  _PictureBox.prototype.of = function (x) { return PictureBox(Future.of(x)) };
+  _PictureBox.prototype.ap = function (p2) { return PictureBox(this.val.ap(p2.val)); };
 
-    // instance Monoid PictureBox where
-    _PictureBox.prototype.empty = function () {
-      return PictureBox(Future.of(Tuple));
-    };
-    _PictureBox.prototype.concat = function (y) {
-      return PictureBox(this.val.concat(y.val));
-    };
+  /////////////////////////////////////////////////////////////////////////////////////
+  // Flickr api
 
-    /////////////////////////////////////////////////////////////////////////////////////
-    // Flickr api
+  //  url :: String -> URL
+  var url = function(t) {
+    return 'http://api.flickr.com/services/feeds/photos_public.gne?tags='+t+'&format=json&jsoncallback=?';
+  };
 
-    //  url :: String -> URL
-    var url = function (t) {
-      return 'http://api.flickr.com/services/feeds/photos_public.gne?tags=' + t + '&format=json&jsoncallback=?';
-    };
+  //  src :: FlickrItem -> URL
+  var src = compose(_.get('m'), _.get('media'));
 
-    //  src :: FlickrItem -> URL
-    var src = compose(_.get('m'), _.get('media'));
+  //  srcs :: FlickrSearch -> [URL]
+  var srcs = compose(map(src), _.get('items'));
 
-    //  srcs :: FlickrSearch -> [URL]
-    var srcs = compose(map(src), _.get('items'));
+  //  images :: FlickrSearch -> [DOM]
+  var images = compose(map(imageTag), srcs);
 
-    //  images :: FlickrSearch -> [DOM]
-    var images = compose(map(imageTag), srcs);
-
-    //  tags :: FlickrSearch -> [DOM]
-    var tags = compose(countToP, _.countBy(_.identity), _.reject(_.isEmpty), _.flatten, _.map(split(' ')), _.pluck('tags'), _.get('items'));
-
-    //  imagesAndTags :: Tuple [DOM] [DOM]
-    var imagesAndTags = liftA2(Tuple, images, tags);
-
-    //  widget :: String -> PictureBox
-    var widget = compose(PictureBox, map(imagesAndTags), getJSON, url);
+  //  widget :: String -> PictureBox
+  var widget = compose(PictureBox, map(images), getJSON, url);
 
 
-    /////////////////////////////////////////////////////////////////////////////////////
-    // Test code
+  /////////////////////////////////////////////////////////////////////////////////////
+  // Test code
 
-    mconcat([widget('cats'), widget('dogs')]).fork(log, function (x) {
-      compose(setHtml($('#flickr')), _.first)(x);
-      compose(setHtml($('#tagcloud')), _.last)(x);
-    });
-  });
+  setBothHtml = curry(function(cats, dogs){
+    setHtml($('#flickr'), cats);
+    setHtml($('#flickr2'), dogs);
+  })
+
+  liftA2(setBothHtml, widget('cat'), widget('dog')).fork(log, log);
+});

@@ -5,193 +5,77 @@ requirejs.config({
     domReady: 'https://cdnjs.cloudflare.com/ajax/libs/require-domReady/2.0.1/domReady.min',
     jquery: 'https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min',
     ramda: 'https://cdnjs.cloudflare.com/ajax/libs/ramda/0.2.3/ramda.min',
-    lambda: 'https://raw.githack.com/loop-recur/lambdajs/master/dist/lambda.amd',
-    pointfree: 'https://raw.githack.com/DrBoolean/pointfree-fantasy/master/dist/pointfree.amd',
-    bacon: 'https://cdnjs.cloudflare.com/ajax/libs/bacon.js/0.7.14/Bacon',
     future: 'http://looprecur.com/hostedjs/v2/data.future.umd',
-    io: 'http://looprecur.com/hostedjs/v2/io',
-    maybe: 'http://looprecur.com/hostedjs/v2/maybe',
-    id: 'http://looprecur.com/hostedjs/v2/id',
-    monoids: 'http://looprecur.com/hostedjs/v2/monoids',
-    either: 'http://looprecur.com/hostedjs/v2/data.either.umd',
-    string: 'http://looprecur.com/hostedjs/v2/string',
-    fn: 'http://looprecur.com/hostedjs/v2/function',
-    array: 'http://looprecur.com/hostedjs/v2/array'
+    hcjs: 'http://looprecur.com/hostedjs/v2/hcjs'
   }
 });
 
 require([
-    'ramda',
-    'jquery',
-    'lambda',
-    'pointfree',
-    'future',
-    'bacon',
-    'io',
-    'monoids',
-    'domReady!'
-  ],
-  function (_, $, L, pf, Future, b, io, Monoids) {
-    io.extendFn();
-    L.expose(window);
-    pf.expose(window);
-    var getJSON = function (url) {
-        return new Future(function (rej, res) {
-          return $.getJSON(url, res);
-        });
-      },
-      listen = _.curry(function (name, el) {
-        return b.fromEventTarget(el, name);
-      }),
-      onValue = _.curry(function (f, s) {
-        return s.onValue(f);
-      }),
-      setHtml = _.curry(function ($el, h) {
-        $el.html(h);
-        return $el;
-      }),
-      log = function (x) {
-        console.log(x);
-        return x;
-      };
+  'ramda',
+  'jquery',
+  'future',
+  'hcjs',
+  'domReady!'
+],
+function (_, $, Future, hcjs) {
 
-    var _empty = function () {
-      return {};
-    };
+  //  imageTag :: URL -> DOM
+  var imageTag = function (url) { return $('<img />', { src: url }); };
 
-    Object.defineProperty(Object.prototype, 'empty', {
-      value: _empty,
-      writable: true,
-      configurable: true,
-      enumerable: false
+  var promptUser = function(question) {
+    return new Future(function(rej, res) {
+      return res(prompt(question));
     });
+  };
 
-    var _concat = function (y) {
-      var that = this;
-      Object.keys(y).reduce(function (acc, x) {
-        if (acc[x]) {
-          acc[x] = y[x].concat(acc[x]);
-        } else {
-          acc[x] = y[x];
-        }
-        return acc;
-      }, that);
-      return that;
-    };
+  /////////////////////////////////////////////////////////////////////////////////////
+  // PictureBox
 
-    Object.defineProperty(Object.prototype, 'concat', {
-      value: _concat,
-      writable: true,
-      configurable: true,
-      enumerable: false
-    });
+  //  PictureBox = data
+  //    val :: Future(a)
+  var _PictureBox = function(val) {
+    this.val = val;
+    this.fork = function(a, b){ return val.fork(a, b); };
+  };
 
-    var Tuple = _.curry(function (x, y) {
-      return new _Tuple(x, y);
-    });
+  var PictureBox = function(x){ return new _PictureBox(x); };
 
-    var _Tuple = function (x, y) {
-      this[0] = x;
-      this[1] = y;
-    };
+  // instance Monoid PictureBox where
+  _PictureBox.prototype.empty = function () { return PictureBox(Future.of([])); };
+  _PictureBox.prototype.concat = function (y) {
+    return PictureBox(this.val.concat(y.val));
+  };
 
-    _Tuple.prototype.inspect = function () {
-      return 'Tuple(' + inspectIt(this[0]) + ' ' + inspectIt(this[1]) + ')';
-    };
+  _PictureBox.prototype.map = function (f) { return PictureBox(this.val.map(f)); };
+  _PictureBox.prototype.of = function (x) { return PictureBox(Future.of(x)) };
+  _PictureBox.prototype.ap = function (p2) { return PictureBox(this.val.ap(p2.val)); };
 
-    _Tuple.prototype.empty = function () {
-      return Tuple(this[0].empty(), this[1].empty());
-    };
+  /////////////////////////////////////////////////////////////////////////////////////
+  // Flickr api
 
-    _Tuple.prototype.concat = function (t2) {
-      return Tuple(this[0].concat(t2[0]), this[1].concat(t2[1]));
-    };
+  //  url :: String -> URL
+  var url = function(t) {
+    return 'http://api.flickr.com/services/feeds/photos_public.gne?tags='+t+'&format=json&jsoncallback=?';
+  };
 
-    Future.prototype.concat = function (x) {
-      return liftA2(concat, this, x);
-    };
+  //  src :: FlickrItem -> URL
+  var src = compose(_.get('m'), _.get('media'));
 
-    //TODO: Remove everything above
-    /////////////////////////////////////////////////////////////////////////////////////
-    // PictureBox
+  //  srcs :: FlickrSearch -> [URL]
+  var srcs = compose(map(src), _.get('items'));
 
-    //  PictureBox = data
-    //    val :: Future([URL])
-    var _PictureBox = function (val) {
-      this.val = val;
-      this.fork = this.val.fork;
-    };
+  //  images :: FlickrSearch -> [DOM]
+  var images = compose(map(imageTag), srcs);
 
-    var PictureBox = function (x) {
-      return new _PictureBox(x);
-    };
+  //  search :: String -> Future FlickrSearch
+  var search = compose(getJSON, url);
 
-    // instance Monoid PictureBox where
-    _PictureBox.prototype.empty = function () {
-      return PictureBox(Future.of([]));
-    };
-    _PictureBox.prototype.concat = function (y) {
-      return PictureBox(this.val.concat(y.val));
-    };
-
-    //  imageTag :: URL -> DOM
-    var imageTag = function (url) {
-      return $('<img />', {
-        src: url
-      });
-    };
-
-    /////////////////////////////////////////////////////////////////////////////////////
-    // Flickr api
-
-    //  flickrFeed :: Future FlickrSearch
-    var flickrFeed = getJSON('http://api.flickr.com/services/feeds/photos_public.gne?tags=cat&format=json&jsoncallback=?');
-
-    //  flickrImageUrls :: FlickrSearch -> [URL]
-    var flickrImageUrls = compose(_.pluck('m'), _.pluck('media'), _.get('items'));
-
-    //  flickrImages :: [URL] -> [DOM]
-    var flickrImages = compose(map(imageTag), flickrImageUrls);
-
-    //  flickrTags :: FlickrSearch -> Map String Int
-    var flickrTags = compose(_.countBy(_.identity), _.reject(_.isEmpty), _.flatten, _.map(split(' ')), _.pluck('tags'), _.get('items'));
-
-    //  flickrImagesAndTags :: Tuple [DOM] (Map String Int)
-    var flickrImagesAndTags = liftA2(Tuple, flickrImages, flickrTags);
-
-    //  widget :: Future (Tuple DOM (Map String Int))
-    var widget = PictureBox(map(flickrImagesAndTags, flickrFeed));
+  //  widget :: String -> PictureBox
+  var widget = compose(PictureBox, map(images), chain(search), promptUser);
 
 
-    /////////////////////////////////////////////////////////////////////////////////////
-    // Youtube api
+  /////////////////////////////////////////////////////////////////////////////////////
+  // Test code
 
-    //  youtubeFeed :: Future YoutubeSearch
-    var youtubeFeed = getJSON('http://gdata.youtube.com/feeds/api/videos?q=cats&alt=json');
-
-    //  firstUrl :: [{url: String}] -> String
-    var firstUrl = compose(_.get('url'), _.first);
-
-    //  youtubeImageUrls :: YoutubeSearch -> [URL]
-    var youtubeImageUrls = compose(map(firstUrl), _.pluck('media$thumbnail'), _.pluck('media$group'), _.get('entry'), _.get('feed'));
-
-    //  youtubeIages :: [URL] -> [DOM]
-    var youtubeIages = compose(map(imageTag), youtubeImageUrls);
-
-    //  youtubeTags :: YoutubeSearch -> Map String Int
-    var youtubeTags = compose(_.countBy(_.identity), _.reject(_.isEmpty), map(compose(_.get('label'), _.last, _.get('category'))), _.get('entry'), _.get('feed'));
-
-    //  youtubeImagesAndTags :: Tuple [DOM] (Map String Int)
-    var youtubeImagesAndTags = liftA2(Tuple, youtubeIages, youtubeTags);
-
-    //  youtube_widget :: Future DOM
-    var youtube_widget = PictureBox(map(youtubeImagesAndTags, youtubeFeed));
-
-    /////////////////////////////////////////////////////////////////////////////////////
-    // Test code
-
-    mconcat([widget, youtube_widget]).fork(log, function (x) {
-      console.log(x);
-      compose(setHtml($('#flickr1')), _.first)(x);
-    });
-  });
+  widget("Enter a term").fork(log, setHtml($('#flickr')));
+});
