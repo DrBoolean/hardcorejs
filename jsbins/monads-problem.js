@@ -3,36 +3,27 @@ requirejs.config({
   paths: {
     domReady: 'https://cdnjs.cloudflare.com/ajax/libs/require-domReady/2.0.1/domReady.min',
     ramda: 'https://raw.githack.com/CrossEye/ramda/master/ramda',
-    pointfree: 'https://raw.githack.com/DrBoolean/pointfree-fantasy/master/dist/pointfree.amd',
     maybe: 'http://looprecur.com/hostedjs/v2/maybe',
-    id: 'http://looprecur.com/hostedjs/v2/id',
     io: 'http://looprecur.com/hostedjs/v2/io',
     future: 'http://looprecur.com/hostedjs/v2/data.future.umd',
-    lambda: 'http://looprecur.com/hostedjs/v2/lambda.amd',
-    hcjs: 'http://looprecur.com/hostedjs/v2/hcjs',
-    string: 'http://looprecur.com/hostedjs/v2/string',
-    fn: 'http://looprecur.com/hostedjs/v2/function',
-    array: 'http://looprecur.com/hostedjs/v2/array'
+    hcjs: 'http://looprecur.com/hostedjs/v2/hcjs'
   }
 });
 
 require(
   [
     'ramda',
-    'pointfree',
     'maybe',
-    'id',
     'io',
     'future',
     'hcjs',
     'domReady!'
   ],
-  function (_, pf, Maybe, Identity, io, Future) {
-    pf.expose(window); // mixes in map/compose/etc
+  function (_, Maybe, io, Future) {
     console.clear();
 
+
     var runIO = io.runIO;
-    io.extendFn();
 
 
 
