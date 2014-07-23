@@ -22,32 +22,33 @@ function (_, $, Future, hcjs) {
   //  imageTag :: URL -> DOM
   var imageTag = function (url) { return $('<img />', { src: url }); };
 
-  //  aTag :: {count: Int, text: String} -> DOM
-  var aTag = function (t, c) { return $('<a />', { style: 'font-size:'+c+'em', html: t}); };
-
-  var countToP = function(counts) {
-    return Object.keys(counts).map(function(t) {
-      return aTag(t, counts[t]);
+  var promptUser = function(question) {
+    return new Future(function(rej, res) {
+      return res(prompt(question));
     });
-  }
+  };
 
   /////////////////////////////////////////////////////////////////////////////////////
   // PictureBox
 
   //  PictureBox = data
-  //    val :: Future([URL])
+  //    val :: Future(a)
   var _PictureBox = function(val) {
     this.val = val;
-    this.fork = this.val.fork;
+    this.fork = function(a, b){ return val.fork(a, b); };
   };
 
-  var PictureBox = function(x){ return new _PictureBox(x); }
+  var PictureBox = function(x){ return new _PictureBox(x); };
 
   // instance Monoid PictureBox where
-  _PictureBox.prototype.empty = function () { return PictureBox(Future.of(Tuple)); };
+  _PictureBox.prototype.empty = function () { return PictureBox(Future.of([])); };
   _PictureBox.prototype.concat = function (y) {
     return PictureBox(this.val.concat(y.val));
   };
+
+  _PictureBox.prototype.map = function (f) { return PictureBox(this.val.map(f)); };
+  _PictureBox.prototype.of = function (x) { return PictureBox(Future.of(x)) };
+  _PictureBox.prototype.ap = function (p2) { return PictureBox(this.val.ap(p2.val)); };
 
   /////////////////////////////////////////////////////////////////////////////////////
   // Flickr api
@@ -64,23 +65,18 @@ function (_, $, Future, hcjs) {
   var srcs = compose(map(src), _.get('items'));
 
   //  images :: FlickrSearch -> [DOM]
-  var images = compose(map(makeImage), srcs);
+  var images = compose(map(imageTag), srcs);
 
-  //  tags :: FlickrSearch -> [DOM]
-  var tags = compose(countToP, _.countBy(_.identity), _.reject(_.isEmpty), chain(split(' ')), _.pluck('tags'), _.get('items'));
+  //  search :: String -> Future FlickrSearch
+  var search = compose(getJSON, url);
 
-  //  imagesAndTags :: Tuple [DOM] [DOM]
-  var imagesAndTags = liftA2(Tuple, images, tags);
-
-  //  widget :: PictureBox
-  var widget = compose(PictureBox, map(imagesAndTags), getJSON, url);
+  //  widget :: String -> PictureBox
+  var widget = compose(PictureBox, map(images), chain(search), promptUser);
 
 
   /////////////////////////////////////////////////////////////////////////////////////
   // Test code
 
-  mconcat([widget('cats'), widget('dogs')]).fork(log, function(x){
-    compose(setHtml($('#flickr')), _.first)(x)
-    compose(setHtml($('#tagcloud')), _.last)(x)
-  });
+  widget("Enter a term").fork(log, setHtml($('#flickr')));
 });
+
