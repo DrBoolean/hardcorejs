@@ -32,7 +32,7 @@ require([
     //  url :: String -> URL
     var url = function (t) {
       return 'http://gdata.youtube.com/feeds/api/videos?q=' + t + '&alt=json';
-    }
+    };
 
     //  src :: YoutubeEntry -> URL
     var src = compose(_.get('url'), _.first, _.get('media$thumbnail'), _.get('media$group'));

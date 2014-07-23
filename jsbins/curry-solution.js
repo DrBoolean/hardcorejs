@@ -56,7 +56,7 @@ require(
     // returns a list of words in a string.
     // Use only the split function and
     // currying.
-    var words = undefined // change this
+    var words = undefined; // change this
     assertEqual(
       ['one', 'two', 'three'],
       words('one two three')
@@ -73,7 +73,7 @@ require(
     // number in a list using only
     // _.multiply and _.map.
 
-    var tripleList = undefined
+    var tripleList = undefined;
     assertEqual([3, 6, 9], tripleList([1, 2, 3]));
     console.log("--------Exercise 2 pass!--------");
 
@@ -93,11 +93,11 @@ require(
       return a > b ? a : b;
     };
 
-    var max = undefined
+    var max = undefined;
     assertEqual(9, max([1, -3483, 9, 7, 2]));
     assertEqual(-1, max([-21, -3483, -2, -1]));
 
 
     console.log("--------Exercise 3 pass!--------");
 
-  })
+  });

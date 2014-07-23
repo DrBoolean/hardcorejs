@@ -9,7 +9,6 @@ requirejs.config({
     pointfree: 'https://raw.githack.com/DrBoolean/pointfree-fantasy/master/dist/pointfree.amd',
     bacon: 'https://cdnjs.cloudflare.com/ajax/libs/bacon.js/0.7.14/Bacon',
     future: 'http://looprecur.com/hostedjs/v2/data.future.umd',
-    future: 'http://looprecur.com/hostedjs/v2/data.future.umd',
     io: 'http://looprecur.com/hostedjs/v2/io',
     maybe: 'http://looprecur.com/hostedjs/v2/maybe',
     id: 'http://looprecur.com/hostedjs/v2/id',
@@ -27,12 +26,10 @@ require([
     'lambda',
     'pointfree',
     'future',
-    'bacon',
     'io',
-    'monoids',
     'domReady!'
   ],
-  function (_, $, L, pf, Future, b, io, Monoids) {
+  function (_, $, L, pf, Future, io) {
     io.extendFn();
     L.expose(window);
     pf.expose(window);
@@ -41,19 +38,13 @@ require([
           return $.getJSON(url, res);
         });
       },
-      listen = _.curry(function (name, el) {
-        return b.fromEventTarget(el, name);
-      }),
-      onValue = _.curry(function (f, s) {
-        return s.onValue(f);
-      }),
       setHtml = _.curry(function ($el, h) {
         $el.html(h);
         return $el;
       }),
       log = function (x) {
         console.log(x);
-        return x
+        return x;
       };
 
 

@@ -38,7 +38,7 @@ require([
 
     var PictureBox = function (x) {
       return new _PictureBox(x);
-    }
+    };
 
     // instance Monoid PictureBox where
     _PictureBox.prototype.empty = function () {

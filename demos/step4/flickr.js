@@ -9,7 +9,6 @@ requirejs.config({
     pointfree: 'https://raw.githack.com/DrBoolean/pointfree-fantasy/master/dist/pointfree.amd',
     bacon: 'https://cdnjs.cloudflare.com/ajax/libs/bacon.js/0.7.14/Bacon',
     future: 'http://looprecur.com/hostedjs/v2/data.future.umd',
-    future: 'http://looprecur.com/hostedjs/v2/data.future.umd',
     io: 'http://looprecur.com/hostedjs/v2/io',
     maybe: 'http://looprecur.com/hostedjs/v2/maybe',
     id: 'http://looprecur.com/hostedjs/v2/id',
@@ -53,7 +52,7 @@ require([
       }),
       log = function (x) {
         console.log(x);
-        return x
+        return x;
       };
 
     var _empty = function () {
@@ -88,29 +87,29 @@ require([
     });
 
     var Tuple = _.curry(function (x, y) {
-      return new _Tuple(x, y)
-    })
+      return new _Tuple(x, y);
+    });
 
     var _Tuple = function (x, y) {
       this[0] = x;
       this[1] = y;
-    }
+    };
 
     _Tuple.prototype.inspect = function () {
       return 'Tuple(' + inspectIt(this[0]) + ' ' + inspectIt(this[1]) + ')';
-    }
+    };
 
     _Tuple.prototype.empty = function () {
-      return Tuple(this[0].empty(), this[1].empty())
+      return Tuple(this[0].empty(), this[1].empty());
     };
 
     _Tuple.prototype.concat = function (t2) {
-      return Tuple(this[0].concat(t2[0]), this[1].concat(t2[1]))
+      return Tuple(this[0].concat(t2[0]), this[1].concat(t2[1]));
     };
 
     Future.prototype.concat = function (x) {
       return liftA2(concat, this, x);
-    }
+    };
 
     //TODO: Remove everything above
     /////////////////////////////////////////////////////////////////////////////////////
@@ -125,7 +124,7 @@ require([
 
     var PictureBox = function (x) {
       return new _PictureBox(x);
-    }
+    };
 
     // instance Monoid PictureBox where
     _PictureBox.prototype.empty = function () {
@@ -148,20 +147,20 @@ require([
     //  flickrFeed :: Future FlickrSearch
     var flickrFeed = getJSON('http://api.flickr.com/services/feeds/photos_public.gne?tags=cat&format=json&jsoncallback=?');
 
-    //  imageUrls :: FlickrSearch -> [URL]
-    var imageUrls = compose(_.pluck('m'), _.pluck('media'), _.get('items'));
+    //  flickrImageUrls :: FlickrSearch -> [URL]
+    var flickrImageUrls = compose(_.pluck('m'), _.pluck('media'), _.get('items'));
 
-    //  images :: [URL] -> [DOM]
-    var images = compose(map(imageTag), imageUrls);
+    //  flickrImages :: [URL] -> [DOM]
+    var flickrImages = compose(map(imageTag), flickrImageUrls);
 
-    //  tags :: FlickrSearch -> Map String Int
-    var tags = compose(_.countBy(_.identity), _.reject(_.isEmpty), _.flatten, _.map(split(' ')), _.pluck('tags'), _.get('items'));
+    //  flickrTags :: FlickrSearch -> Map String Int
+    var flickrTags = compose(_.countBy(_.identity), _.reject(_.isEmpty), _.flatten, _.map(split(' ')), _.pluck('tags'), _.get('items'));
 
-    //  imagesAndTags :: Tuple [DOM] (Map String Int)
-    var imagesAndTags = liftA2(Tuple, images, tags)
+    //  flickrImagesAndTags :: Tuple [DOM] (Map String Int)
+    var flickrImagesAndTags = liftA2(Tuple, flickrImages, flickrTags);
 
     //  widget :: Future (Tuple DOM (Map String Int))
-    var widget = PictureBox(map(imagesAndTags, flickrFeed));
+    var widget = PictureBox(map(flickrImagesAndTags, flickrFeed));
 
 
     /////////////////////////////////////////////////////////////////////////////////////
@@ -173,26 +172,26 @@ require([
     //  firstUrl :: [{url: String}] -> String
     var firstUrl = compose(_.get('url'), _.first);
 
-    //  imageUrls :: YoutubeSearch -> [URL]
-    var imageUrls = compose(map(firstUrl), _.pluck('media$thumbnail'), _.pluck('media$group'), _.get('entry'), _.get('feed'));
+    //  youtubeImageUrls :: YoutubeSearch -> [URL]
+    var youtubeImageUrls = compose(map(firstUrl), _.pluck('media$thumbnail'), _.pluck('media$group'), _.get('entry'), _.get('feed'));
 
-    //  images :: [URL] -> [DOM]
-    var images = compose(map(imageTag), imageUrls);
+    //  youtubeIages :: [URL] -> [DOM]
+    var youtubeIages = compose(map(imageTag), youtubeImageUrls);
 
-    //  tags :: YoutubeSearch -> Map String Int
-    var tags = compose(_.countBy(_.identity), _.reject(_.isEmpty), map(compose(_.get('label'), _.last, _.get('category'))), _.get('entry'), _.get('feed'));
+    //  youtubeTags :: YoutubeSearch -> Map String Int
+    var youtubeTags = compose(_.countBy(_.identity), _.reject(_.isEmpty), map(compose(_.get('label'), _.last, _.get('category'))), _.get('entry'), _.get('feed'));
 
-    //  imagesAndTags :: Tuple [DOM] (Map String Int)
-    var imagesAndTags = liftA2(Tuple, images, tags)
+    //  youtubeImagesAndTags :: Tuple [DOM] (Map String Int)
+    var youtubeImagesAndTags = liftA2(Tuple, youtubeIages, youtubeTags);
 
     //  youtube_widget :: Future DOM
-    var youtube_widget = PictureBox(map(imagesAndTags, youtubeFeed));
+    var youtube_widget = PictureBox(map(youtubeImagesAndTags, youtubeFeed));
 
     /////////////////////////////////////////////////////////////////////////////////////
     // Test code
 
     mconcat([widget, youtube_widget]).fork(log, function (x) {
       console.log(x);
-      compose(setHtml($('#flickr1')), _.first)(x)
+      compose(setHtml($('#flickr1')), _.first)(x);
     });
   });

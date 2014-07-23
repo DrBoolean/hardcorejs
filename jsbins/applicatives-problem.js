@@ -29,29 +29,29 @@ require(
     // Exercise 1
     // ==========
     // Write a function that add's two possibly null numbers together using Maybe and ap()
-    console.log("--------Start exercise 1--------")
+    console.log("--------Start exercise 1--------");
 
     var ex1 = function (x, y) {
-      undefined // define me
+      return undefined; // define me
     };
 
-    assertEqual(Maybe(5), ex1(2, 3))
-    assertEqual(Maybe(null), ex1(null, 3))
-    console.log("exercise 1...ok!")
+    assertEqual(Maybe(5), ex1(2, 3));
+    assertEqual(Maybe(null), ex1(null, 3));
+    console.log("exercise 1...ok!");
 
 
 
     // Exercise 2
     // ==========
     // Rewrite 1 to use liftA2 instead of ap()
-    console.log("--------Start exercise 2--------")
+    console.log("--------Start exercise 2--------");
 
 
-    var ex2 = undefined
+    var ex2 = undefined;
 
-    assertEqual(Maybe(5), ex2(Maybe(2), Maybe(3)))
-    assertEqual(Maybe(null), ex2(Maybe(null), Maybe(3)))
-    console.log("exercise 2...ok!")
+    assertEqual(Maybe(5), ex2(Maybe(2), Maybe(3)));
+    assertEqual(Maybe(null), ex2(Maybe(null), Maybe(3)));
+    console.log("exercise 2...ok!");
 
 
 
@@ -60,21 +60,21 @@ require(
     // ==========
     // Make a future by running getPost() and getComments() using applicatives, then renders the page with both
     var makeComments = _.reduce(function (acc, c) {
-      return acc + "<li>" + c + "</li>"
-    }, "")
+      return acc + "<li>" + c + "</li>";
+    }, "");
     var render = _.curry(function (post, comments) {
       return "<div>" + post.title + "</div>" + makeComments(comments);
-    })
-    console.log("--------Start exercise 3--------")
+    });
+    console.log("--------Start exercise 3--------");
 
 
-    var ex3 = undefined
+    var ex3 = undefined;
 
 
     ex3.fork(log, function (html) {
-      assertEqual("<div>Love them futures</div><li>This class should be illegal</li><li>Monads are like space burritos</li>", html)
-      console.log("exercise 3...ok!")
-    })
+      assertEqual("<div>Love them futures</div><li>This class should be illegal</li><li>Monads are like space burritos</li>", html);
+      console.log("exercise 3...ok!");
+    });
 
 
 
@@ -82,24 +82,24 @@ require(
     // Exercise 4
     // ==========
     // setup...
-    localStorage.player1 = "toby"
-    localStorage.player2 = "sally"
+    localStorage.player1 = "toby";
+    localStorage.player2 = "sally";
 
     // Write a function that gets both player1 and player2 from the cache.
     var getCache = function (x) {
       return localStorage[x];
     }.toIO();
     var game = _.curry(function (p1, p2) {
-      return p1 + ' vs ' + p2
-    })
-    console.log("--------Start exercise 4--------")
+      return p1 + ' vs ' + p2;
+    });
+    console.log("--------Start exercise 4--------");
 
 
-    var ex4 = undefined
+    var ex4 = undefined;
 
 
-    assertEqual("toby vs sally", runIO(ex4))
-    console.log("exercise 4...ok!")
+    assertEqual("toby vs sally", runIO(ex4));
+    console.log("exercise 4...ok!");
 
 
 
@@ -113,21 +113,17 @@ require(
           res({
             id: i,
             title: 'Love them futures'
-          })
-        }, 300)
-      })
+          });
+        }, 300);
+      });
     }
 
     function getComments(i) {
       return new Future(function (rej, res) {
         setTimeout(function () {
-          res(["This class should be illegal", "Monads are like space burritos"])
-        }, 300)
-      })
-    }
-
-    function trim(x) {
-      return x.replace('/\S{0,}/g', '');
+          res(["This class should be illegal", "Monads are like space burritos"]);
+        }, 300);
+      });
     }
 
   });

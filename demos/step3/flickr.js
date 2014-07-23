@@ -38,7 +38,7 @@ require([
       return Object.keys(counts).map(function (t) {
         return aTag(t, counts[t]);
       });
-    }
+    };
 
     /////////////////////////////////////////////////////////////////////////////////////
     // PictureBox
@@ -52,7 +52,7 @@ require([
 
     var PictureBox = function (x) {
       return new _PictureBox(x);
-    }
+    };
 
     // instance Monoid PictureBox where
     _PictureBox.prototype.empty = function () {
@@ -83,7 +83,7 @@ require([
     var tags = compose(countToP, _.countBy(_.identity), _.reject(_.isEmpty), _.flatten, _.map(split(' ')), _.pluck('tags'), _.get('items'));
 
     //  imagesAndTags :: Tuple [DOM] [DOM]
-    var imagesAndTags = liftA2(Tuple, images, tags)
+    var imagesAndTags = liftA2(Tuple, images, tags);
 
     //  widget :: String -> PictureBox
     var widget = compose(PictureBox, map(imagesAndTags), getJSON, url);
@@ -93,7 +93,7 @@ require([
     // Test code
 
     mconcat([widget('cats'), widget('dogs')]).fork(log, function (x) {
-      compose(setHtml($('#flickr')), _.first)(x)
-      compose(setHtml($('#tagcloud')), _.last)(x)
+      compose(setHtml($('#flickr')), _.first)(x);
+      compose(setHtml($('#tagcloud')), _.last)(x);
     });
   });

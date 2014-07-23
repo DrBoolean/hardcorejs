@@ -61,7 +61,7 @@ require(
     // articles using only get, _.compose, and
     // _.map.
 
-    var names = undefined
+    var names = undefined;
 
     assertEqual(
       ['Debbie Downer', 'Caspar Milquetoast'],
@@ -80,7 +80,7 @@ require(
     // Use the names function you wrote above
     // with _.compose and _.contains.
 
-    var isAuthor = undefined
+    var isAuthor = undefined;
 
     assertEqual(
       false,
@@ -116,8 +116,8 @@ require(
     // compute the average values in a list using
     // only fork, _.divide, _.sum, and _.size.
 
-    var avg = undefined // change this
+    var avg = undefined; // change this
     assertEqual(3, avg([1, 2, 3, 4, 5]));
     console.log("--------Exercise 3 pass!--------");
 
-  })
+  });

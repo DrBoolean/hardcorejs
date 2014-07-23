@@ -9,6 +9,7 @@ requirejs.config({
     bacon: 'https://cdnjs.cloudflare.com/ajax/libs/bacon.js/0.7.14/Bacon',
     future: 'http://looprecur.com/hostedjs/v2/data.future.umd',
     io: 'http://looprecur.com/hostedjs/v2/io',
+    jquery: 'http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min',
     maybe: 'http://looprecur.com/hostedjs/v2/maybe',
     id: 'http://looprecur.com/hostedjs/v2/id',
     monoids: 'http://looprecur.com/hostedjs/v2/monoids',
@@ -22,12 +23,12 @@ requirejs.config({
 require([
     'ramda',
     'lambda',
-    'pointfree',
     'bacon',
     'io',
+    'jquery',
     'domReady!'
   ],
-  function (_, L, pf, b, io) {
+  function (_, L, b, io, $) {
 
     var isPresent = compose(L.lt(0), _.get('length'), replace(/\s+/, '')),
       targetValue = compose(_.get('value'), _.get('target')),

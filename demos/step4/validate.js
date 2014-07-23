@@ -43,7 +43,7 @@ require([
       }),
       log = function (x) {
         console.log(x);
-        return x
+        return x;
       },
       All = Monoids.All;
 
