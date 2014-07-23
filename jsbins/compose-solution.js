@@ -88,11 +88,10 @@ console.log("--------Exercise 2 pass!--------");
     
 console.log("--------Start exercise 3--------");
 // -- Challenge 3 -------------------------
-// Make a boolean function that says whether
+// isAuthor uses the names function above to see if
 // a given person wrote any of the articles.
-// Use the names function you wrote above
-// with _.compose and _.contains.
-
+// "Uncompose" the function below by rewrite it
+// without _.compose to make it more natural.
 var isAuthor = _.curry(function(x, xs){
   return _.contains(x, names(xs));
 });
