@@ -4,7 +4,6 @@ requirejs.config({
   },
   paths: {
     domReady: 'https://cdnjs.cloudflare.com/ajax/libs/require-domReady/2.0.1/domReady.min',
-    jquery: 'https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min',
     ramda: 'https://cdnjs.cloudflare.com/ajax/libs/ramda/0.2.3/ramda.min',
     lambda: 'https://raw.githack.com/loop-recur/lambdajs/master/dist/lambda.amd',
     pointfree: 'https://raw.githack.com/DrBoolean/pointfree-fantasy/master/dist/pointfree.amd',
@@ -20,42 +19,37 @@ requirejs.config({
     array: 'http://looprecur.com/hostedjs/v2/array'
   }
 });
-
 require([
   'ramda',
-  'jquery',
   'lambda',
   'pointfree',
-  'future',
   'bacon',
-  'io',
   'monoids',
   'domReady!'
 ],
-function (_, jQuery, L, pf, Future, b, io, Monoids) {
-  io.extendFn();
+function (_, L, pf, b, Monoids) {
   L.expose(window);
   pf.expose(window);
-  var runIO = io.runIO,
-    IO      = io.IO,
-    compose = _.compose,
+  var compose = _.compose,
     map     = _.map,
+    getResult     = Monoids.getResult,
+    listen  = _.curry(function(name, el) { return b.fromEventTarget(el, name); }),
     $       = function (sel) { return document.querySelector(sel); },
-    getJSON  = function (url) {
-      return new Future(function(rej, res){
-        return jQuery.getJSON(url,res);
-      });
-    },
-    setHtml = _.curry(function(sel, h){ return jQuery(sel).html(h); }).toIO(),
-    log         = function(x){ console.log(x); return x };
+    setHtml        = _.curry(function(sel, h){ $(sel).innerHTML = h; }),
+    log            = function(x){ console.log(x); return x },
+    All = Monoids.All;
 
+  var isPresent      = compose(All, lt(0), _.get('length'), replace(/\s+/, '')),
+      isEmail        = compose(All, test(/^\w+@[a-zA-Z_]+?\.[a-zA-Z]{2,3}$/)),
+      isLongEnough   = compose(All, lt(7), _.get('length')),
+      targetValue    = compose(_.get('value'), _.get('target')),
+      preventDefault = function(s){ return s.doAction('.preventDefault'); };
 
-    var flickrURL = 'http://api.flickr.com/services/feeds/photos_public.gne?format=json&jsoncallback=?',
-        makeImage = function(i){ return jQuery('<img />', {src: i.media.m}); }
-        putOnScreen = compose(setHtml('#main'), map(makeImage), _.get('items'), log)
-        prog = compose(map(putOnScreen), getJSON);
+  var validate = compose(getResult, mconcat([isEmail, isLongEnough, isPresent])),
+      emailChanges = compose(map(targetValue), listen('keyup')),
+      prog = compose(map(validate), emailChanges);
 
   //////////////////////////////////////////////////////////////////////////////
 
-  prog(flickrURL).fork(log, runIO);
+  prog($('#email')).onValue(setHtml('#is-valid'));
 });
