@@ -1,7 +1,6 @@
 /*jslint nomen: true */
 requirejs.config({
-  shim: {
-  },
+  shim: {},
   paths: {
     domReady: 'https://cdnjs.cloudflare.com/ajax/libs/require-domReady/2.0.1/domReady.min',
     handlebars: '//cdnjs.cloudflare.com/ajax/libs/handlebars.js/2.0.0-alpha.4/handlebars.amd',
@@ -22,43 +21,59 @@ requirejs.config({
 });
 
 require([
-  'ramda',
-  'handlebars',
-  'lambda',
-  'pointfree',
-  'future',
-  'bacon',
-  'monoids',
-  'domReady!'
-],
-function (_, H, L, pf, Future, b, Monoids) {
-  // {{{ setup
-  L.expose(window);
-  pf.expose(window);
-  var Handlebars = H.default,
-  targetValue = compose(_.get('value'), _.get('target')),
-  listen      = _.curry(function(name, el) { return b.fromEventTarget(el, name); }),
-  $           = function (sel) { return document.querySelector(sel); },
-  setHtml        = _.curry(function(sel, h){ $(sel).innerHTML = h; }),
-  getFromStorage = function(name){ return JSON.parse(localStorage[name]); },
-  saveToStorage  = _.curry(function(name, val){ localStorage[name] = JSON.stringify(val); return val; }),
-  log            = function(x){ console.log(x); return x; };
-  // }}}
+    'ramda',
+    'handlebars',
+    'lambda',
+    'pointfree',
+    'future',
+    'bacon',
+    'monoids',
+    'domReady!'
+  ],
+  function (_, H, L, pf, Future, b, Monoids) {
+    // {{{ setup
+    L.expose(window);
+    pf.expose(window);
+    var Handlebars = H.default,
+      targetValue = compose(_.get('value'), _.get('target')),
+      listen = _.curry(function (name, el) {
+        return b.fromEventTarget(el, name);
+      }),
+      $ = function (sel) {
+        return document.querySelector(sel);
+      },
+      setHtml = _.curry(function (sel, h) {
+        $(sel).innerHTML = h;
+      }),
+      getFromStorage = function (name) {
+        return JSON.parse(localStorage[name]);
+      },
+      saveToStorage = _.curry(function (name, val) {
+        localStorage[name] = JSON.stringify(val);
+        return val;
+      }),
+      log = function (x) {
+        console.log(x);
+        return x;
+      };
+    // }}}
 
-  //////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////
 
-  var isEnterKey = compose(eq(13)                 , _.get('keyCode')),
-    textOnEnter  = compose(map(targetValue)       , filter(isEnterKey)     , listen('keyup')),
-    renderTodos  = Handlebars.compile($('#todo-tpl').innerHTML),
-    updatePage   = compose(setHtml('#main')       , renderTodos),
+    var isEnterKey = compose(eq(13), _.get('keyCode')),
+      textOnEnter = compose(map(targetValue), filter(isEnterKey), listen('keyup')),
+      renderTodos = Handlebars.compile($('#todo-tpl').innerHTML),
+      updatePage = compose(setHtml('#main'), renderTodos),
 
-    appendTodo   = function(t){ return unshift(t, getFromStorage('todos')); },
-    renderTodos  = compose(updatePage             , getFromStorage),
-    persistTodo  = compose(saveToStorage('todos') , appendTodo),
-    saveTodo     = compose(updatePage             , persistTodo);
+      appendTodo = function (t) {
+        return unshift(t, getFromStorage('todos'));
+      },
+      renderTodos = compose(updatePage, getFromStorage),
+      persistTodo = compose(saveToStorage('todos'), appendTodo),
+      saveTodo = compose(updatePage, persistTodo);
 
-  //////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////
 
-  textOnEnter($('input')).onValue(saveTodo);
-  renderTodos('todos');
-});
+    textOnEnter($('input')).onValue(saveTodo);
+    renderTodos('todos');
+  });

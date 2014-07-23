@@ -1,7 +1,6 @@
 /*jslint nomen: true */
 requirejs.config({
-  shim: {
-  },
+  shim: {},
   paths: {
     domReady: 'https://cdnjs.cloudflare.com/ajax/libs/require-domReady/2.0.1/domReady.min',
     jquery: 'https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min',
@@ -23,58 +22,68 @@ requirejs.config({
 });
 
 require([
-  'ramda',
-  'jquery',
-  'lambda',
-  'pointfree',
-  'future',
-  'bacon',
-  'io',
-  'monoids',
-  'domReady!'
-],
-function (_, $, L, pf, Future, b, io, Monoids) {
-  io.extendFn();
-  L.expose(window);
-  pf.expose(window);
-  var getJSON  = function (url) {
-      return new Future(function(rej, res){
-        return $.getJSON(url,res);
+    'ramda',
+    'jquery',
+    'lambda',
+    'pointfree',
+    'future',
+    'bacon',
+    'io',
+    'monoids',
+    'domReady!'
+  ],
+  function (_, $, L, pf, Future, b, io, Monoids) {
+    io.extendFn();
+    L.expose(window);
+    pf.expose(window);
+    var getJSON = function (url) {
+        return new Future(function (rej, res) {
+          return $.getJSON(url, res);
+        });
+      },
+      listen = _.curry(function (name, el) {
+        return b.fromEventTarget(el, name);
+      }),
+      onValue = _.curry(function (f, s) {
+        return s.onValue(f);
+      }),
+      setHtml = _.curry(function ($el, h) {
+        $el.html(h);
+        return $el;
+      }),
+      log = function (x) {
+        console.log(x);
+        return x
+      };
+
+
+    /////////////////////////////////////////////////////////////////////////////////////
+    // Youtube api
+
+    //  youtubeFeed :: Future YoutubeSearch
+    var youtubeFeed = getJSON('http://gdata.youtube.com/feeds/api/videos?q=cats&alt=json');
+
+    //  firstUrl :: [{url: String}] -> String
+    var firstUrl = compose(_.get('url'), _.first);
+
+    //  imageUrls :: YoutubeSearch -> [URL]
+    var imageUrls = compose(map(firstUrl), _.pluck('media$thumbnail'), _.pluck('media$group'), _.get('entry'), _.get('feed'));
+
+    //  imageTag :: URL -> DOM
+    var imageTag = function (url) {
+      return $('<img />', {
+        src: url
       });
-    },
-  listen      = _.curry(function(name, el) { return b.fromEventTarget(el, name); }),
-  onValue      = _.curry(function(f, s) { return s.onValue(f); }),
-  setHtml = _.curry(function($el, h){
-    $el.html(h);
-    return $el;
-  }),
-  log         = function(x){ console.log(x); return x };
+    };
+
+    var makeImages = compose(map(imageTag), imageUrls);
+
+    //  widget :: Future DOM
+    var widget = map(makeImages, youtubeFeed);
 
 
-  /////////////////////////////////////////////////////////////////////////////////////
-  // Youtube api
+    /////////////////////////////////////////////////////////////////////////////////////
+    // Test code
 
-  //  youtubeFeed :: Future YoutubeSearch
-  var youtubeFeed = getJSON('http://gdata.youtube.com/feeds/api/videos?q=cats&alt=json');
-
-  //  firstUrl :: [{url: String}] -> String
-  var firstUrl = compose(_.get('url'), _.first);
-
-  //  imageUrls :: YoutubeSearch -> [URL]
-  var imageUrls = compose(map(firstUrl), _.pluck('media$thumbnail'), _.pluck('media$group'), _.get('entry'), _.get('feed'));
-
-  //  imageTag :: URL -> DOM
-  var imageTag = function (url) { return $('<img />', { src: url }); };
-
-  var makeImages = compose(map(imageTag), imageUrls);
-
-  //  widget :: Future DOM
-  var widget = map(makeImages, youtubeFeed);
-
-
-  /////////////////////////////////////////////////////////////////////////////////////
-  // Test code
-
-  widget.fork(log, setHtml($('#youtube')));
-});
-
+    widget.fork(log, setHtml($('#youtube')));
+  });

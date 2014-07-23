@@ -11,41 +11,44 @@ requirejs.config({
 });
 
 require([
-  'ramda',
-  'jquery',
-  'future',
-  'hcjs',
-  'domReady!'
-],
-function (_, $, Future, hcjs) {
+    'ramda',
+    'jquery',
+    'future',
+    'hcjs',
+    'domReady!'
+  ],
+  function (_, $, Future, hcjs) {
 
-  //  imageTag :: URL -> DOM
-  var imageTag = function (url) { return $('<img />', { src: url }); };
+    //  imageTag :: URL -> DOM
+    var imageTag = function (url) {
+      return $('<img />', {
+        src: url
+      });
+    };
 
-  /////////////////////////////////////////////////////////////////////////////////////
-  // Youtube api
+    /////////////////////////////////////////////////////////////////////////////////////
+    // Youtube api
 
-  //  url :: String -> URL
-  var url = function(t) {
-    return 'http://gdata.youtube.com/feeds/api/videos?q='+t+'&alt=json';
-  }
+    //  url :: String -> URL
+    var url = function (t) {
+      return 'http://gdata.youtube.com/feeds/api/videos?q=' + t + '&alt=json';
+    }
 
-  //  src :: YoutubeEntry -> URL
-  var src = compose(_.get('url'), _.first, _.get('media$thumbnail'), _.get('media$group'));
+    //  src :: YoutubeEntry -> URL
+    var src = compose(_.get('url'), _.first, _.get('media$thumbnail'), _.get('media$group'));
 
-  //  srcs :: YoutubeSearch -> [URL]
-  var srcs = compose(map(src), _.get('entry'), _.get('feed'));
+    //  srcs :: YoutubeSearch -> [URL]
+    var srcs = compose(map(src), _.get('entry'), _.get('feed'));
 
-  //  images :: YoutubeSearch -> [DOM]
-  var images = compose(map(imageTag), srcs);
+    //  images :: YoutubeSearch -> [DOM]
+    var images = compose(map(imageTag), srcs);
 
-  //  widget :: Future DOM
-  var widget = compose(map(images), getJSON, url);
+    //  widget :: Future DOM
+    var widget = compose(map(images), getJSON, url);
 
 
-  /////////////////////////////////////////////////////////////////////////////////////
-  // Test code
+    /////////////////////////////////////////////////////////////////////////////////////
+    // Test code
 
-  widget('cats').fork(log, setHtml($('#youtube')));
-});
-
+    widget('cats').fork(log, setHtml($('#youtube')));
+  });

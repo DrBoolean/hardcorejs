@@ -11,59 +11,66 @@ requirejs.config({
 });
 
 require([
-  'ramda',
-  'jquery',
-  'future',
-  'hcjs',
-  'domReady!'
-],
-function (_, $, Future, hcjs) {
+    'ramda',
+    'jquery',
+    'future',
+    'hcjs',
+    'domReady!'
+  ],
+  function (_, $, Future, hcjs) {
 
-  //  imageTag :: URL -> DOM
-  var imageTag = function (url) { return $('<img />', { src: url }); };
+    //  imageTag :: URL -> DOM
+    var imageTag = function (url) {
+      return $('<img />', {
+        src: url
+      });
+    };
 
-  /////////////////////////////////////////////////////////////////////////////////////
-  // PictureBox
+    /////////////////////////////////////////////////////////////////////////////////////
+    // PictureBox
 
-  //  PictureBox = data
-  //    val :: Future(a)
-  var _PictureBox = function(val) {
-    this.val = val;
-    this.fork = this.val.fork;
-  };
+    //  PictureBox = data
+    //    val :: Future(a)
+    var _PictureBox = function (val) {
+      this.val = val;
+      this.fork = this.val.fork;
+    };
 
-  var PictureBox = function(x){ return new _PictureBox(x); }
+    var PictureBox = function (x) {
+      return new _PictureBox(x);
+    }
 
-  // instance Monoid PictureBox where
-  _PictureBox.prototype.empty = function () { return PictureBox(Future.of([])); };
-  _PictureBox.prototype.concat = function (y) {
-    return PictureBox(this.val.concat(y.val));
-  };
+    // instance Monoid PictureBox where
+    _PictureBox.prototype.empty = function () {
+      return PictureBox(Future.of([]));
+    };
+    _PictureBox.prototype.concat = function (y) {
+      return PictureBox(this.val.concat(y.val));
+    };
 
-  /////////////////////////////////////////////////////////////////////////////////////
-  // Flickr api
+    /////////////////////////////////////////////////////////////////////////////////////
+    // Flickr api
 
-  //  url :: String -> URL
-  var url = function(t) {
-    return 'http://api.flickr.com/services/feeds/photos_public.gne?tags='+t+'&format=json&jsoncallback=?';
-  };
+    //  url :: String -> URL
+    var url = function (t) {
+      return 'http://api.flickr.com/services/feeds/photos_public.gne?tags=' + t + '&format=json&jsoncallback=?';
+    };
 
-  //  src :: FlickrItem -> URL
-  var src = compose(_.get('m'), _.get('media'));
+    //  src :: FlickrItem -> URL
+    var src = compose(_.get('m'), _.get('media'));
 
-  //  srcs :: FlickrSearch -> [URL]
-  var srcs = compose(map(src), _.get('items'));
+    //  srcs :: FlickrSearch -> [URL]
+    var srcs = compose(map(src), _.get('items'));
 
-  //  images :: FlickrSearch -> [DOM]
-  var images = compose(map(imageTag), srcs);
+    //  images :: FlickrSearch -> [DOM]
+    var images = compose(map(imageTag), srcs);
 
-  //  widget :: String -> PictureBox
-  var widget = compose(PictureBox, map(images), getJSON, url);
+    //  widget :: String -> PictureBox
+    var widget = compose(PictureBox, map(images), getJSON, url);
 
 
-  /////////////////////////////////////////////////////////////////////////////////////
-  // Test code
+    /////////////////////////////////////////////////////////////////////////////////////
+    // Test code
 
-  mconcat([widget('cats'), widget('dogs')]).fork(log, setHtml($('#flickr')));
-});
-
+    mconcat([widget('cats'), widget('dogs')]).fork(log, setHtml($('#flickr')));
+  });

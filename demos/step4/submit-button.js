@@ -1,7 +1,6 @@
 /*jslint nomen: true */
 requirejs.config({
-  shim: {
-  },
+  shim: {},
   paths: {
     domReady: 'https://cdnjs.cloudflare.com/ajax/libs/require-domReady/2.0.1/domReady.min',
     ramda: 'https://cdnjs.cloudflare.com/ajax/libs/ramda/0.2.3/ramda.min',
@@ -21,25 +20,27 @@ requirejs.config({
 });
 
 require([
-  'ramda',
-  'lambda',
-  'pointfree',
-  'bacon',
-  'io',
-  'domReady!'
-],
-function (_, L, pf, b, io) {
+    'ramda',
+    'lambda',
+    'pointfree',
+    'bacon',
+    'io',
+    'domReady!'
+  ],
+  function (_, L, pf, b, io) {
 
-  var isPresent    = compose(L.lt(0), _.get('length'), replace(/\s+/, '')),
-    targetValue    = compose(_.get('value'), _.get('target')),
-    hasValue       = compose(isPresent, targetValue),
-    toggle         = _.curry(function(el, bool){ el.disabled = !bool; }),
-    toggleButton   = toggle($('button'));
+    var isPresent = compose(L.lt(0), _.get('length'), replace(/\s+/, '')),
+      targetValue = compose(_.get('value'), _.get('target')),
+      hasValue = compose(isPresent, targetValue),
+      toggle = _.curry(function (el, bool) {
+        el.disabled = !bool;
+      }),
+      toggleButton = toggle($('button'));
 
 
-  var validityStream = compose(map(hasValue), listen('keyup')),
+    var validityStream = compose(map(hasValue), listen('keyup')),
       prog = compose(map(toggleButton), validityStream);
 
-  //////////////////////////////////////////////////////////////////////////////
-  prog($('input')).onValue();
-});
+    //////////////////////////////////////////////////////////////////////////////
+    prog($('input')).onValue();
+  });

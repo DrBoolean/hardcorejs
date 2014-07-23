@@ -11,41 +11,44 @@ requirejs.config({
 });
 
 require([
-  'ramda',
-  'jquery',
-  'future',
-  'hcjs',
-  'domReady!'
-],
-function (_, $, Future, hcjs) {
+    'ramda',
+    'jquery',
+    'future',
+    'hcjs',
+    'domReady!'
+  ],
+  function (_, $, Future, hcjs) {
 
-  //  imageTag :: URL -> DOM
-  var imageTag = function (url) { return $('<img />', { src: url }); };
+    //  imageTag :: URL -> DOM
+    var imageTag = function (url) {
+      return $('<img />', {
+        src: url
+      });
+    };
 
-  ////////////////////////////////////////////
-  // Flickr api
+    ////////////////////////////////////////////
+    // Flickr api
 
-  //  url :: String -> URL
-  var url = function(t) {
-    return 'http://api.flickr.com/services/feeds/photos_public.gne?tags='+t+'&format=json&jsoncallback=?';
-  };
+    //  url :: String -> URL
+    var url = function (t) {
+      return 'http://api.flickr.com/services/feeds/photos_public.gne?tags=' + t + '&format=json&jsoncallback=?';
+    };
 
-  //  src :: FlickrItem -> URL
-  var src = compose(_.get('m'), _.get('media'));
+    //  src :: FlickrItem -> URL
+    var src = compose(_.get('m'), _.get('media'));
 
-  //  srcs :: FlickrSearch -> [URL]
-  var srcs = compose(map(src), _.get('items'));
+    //  srcs :: FlickrSearch -> [URL]
+    var srcs = compose(map(src), _.get('items'));
 
-  //  images :: FlickrSearch -> [DOM]
-  var images = compose(map(imageTag), srcs);
+    //  images :: FlickrSearch -> [DOM]
+    var images = compose(map(imageTag), srcs);
 
-  //  widget :: String -> Future [DOM]
-  var widget = compose(map(images), getJSON, url);
+    //  widget :: String -> Future [DOM]
+    var widget = compose(map(images), getJSON, url);
 
 
-  /////////////////////////////////////////////////////////////////////////////////////
-  // Test code
+    /////////////////////////////////////////////////////////////////////////////////////
+    // Test code
 
-  widget('cats').fork(log, setHtml($('#flickr')));
-});
-
+    widget('cats').fork(log, setHtml($('#flickr')));
+  });
