@@ -32,15 +32,15 @@ require([
 
       getOrElse = _.curry(function(x, m){ return m.getOrElse(x); }),
 
-      $ = function (sel) {
-        return document.querySelector(sel);
-      }.toIO(),
+      $ = function (sel) { return document.querySelector(sel); }.toIO(),
 
       setHtml = _.curry(function (sel, h) {
         return $(sel).map(function(s) { s.innerHTML = h; });
       }),
 
-      getFromStorage = function (name) { return Maybe.fromNullable(localStorage[name]) }.toIO(),
+      getFromStorage = function (name) {
+        return Maybe.fromNullable(localStorage[name])
+      }.toIO(),
 
       saveToStorage = function (name) {
         return function(val) {
