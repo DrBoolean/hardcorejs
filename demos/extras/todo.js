@@ -59,7 +59,7 @@ require([
 
       getTodos = getFromStorage("todos").map(getOrElse("[]")).map(JSON.parse),
 
-      appendTodo = compose(getTodos.map.bind(getTodos), unshift)
+      appendTodo = compose(getTodos.map.bind(getTodos), unshift),
 
       persistTodo = compose(chain(saveToStorage('todos')), appendTodo),
 
