@@ -33,12 +33,12 @@ function (_, $, Future, hcjs) {
 
   //  PictureBox = data
   //    val :: Future(a)
-  var _PictureBox = function(val) {
+  var PictureBox = function(val) {
     this.val = val;
     this.fork = function(a, b){ return val.fork(a, b); };
   };
 
-  var PictureBox = function(x){ return new _PictureBox(x); };
+  var createPictureBox = function(x){ return new PictureBox(x); };
 
   // instance Monoid PictureBox where
   _PictureBox.prototype.empty = function () { return PictureBox(Future.of([])); };
@@ -71,9 +71,18 @@ function (_, $, Future, hcjs) {
   var search = compose(getJSON, url);
 
   //  widget :: String -> PictureBox
-  var widget = compose(PictureBox, map(images), chain(search), promptUser);
+  var widget = compose(createPictureBox, map(images), chain(search), promptUser);
 
-
+  return {
+    src: src,
+    srcs: srcs,
+    images: images,
+    search: search,
+    widget: widget,
+    url: url,
+    createPictureBox: createPictureBox
+  }
+  
   /////////////////////////////////////////////////////////////////////////////////////
   // Test code
 
